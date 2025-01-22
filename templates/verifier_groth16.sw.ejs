@@ -1,0 +1,150 @@
+// SPDX-License-Identifier: GPL-3.0
+/*
+Copyright 2021 0KIMS association.
+
+This file is generated with [snarkJS](https://github.com/iden3/snarkjs).
+
+snarkJS is a free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+snarkJS is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
+License for more details.
+
+You should have received a copy of the GNU General Public License
+along with snarkJS. If not, see
+<https: //www.gnu.org/licenses />.
+*/
+
+contract;
+
+// Scalar field size
+const R: u256 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001u256;
+// Base field size
+const Q: u256 = 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47u256;
+
+// Verification Key data
+const ALPHA_X: u256 = <%= '0x' + BigInt(vk_alpha_1[0]).toString(16) + 'u256' ;%>;
+const ALPHA_Y: u256 = <%= '0x' + BigInt(vk_alpha_1[1]).toString(16) + 'u256' ;%>;
+const BETA_X1: u256 = <%= '0x' + BigInt(vk_beta_2[0][1]).toString(16) + 'u256' ;%>;
+const BETA_X2: u256 = <%= '0x' + BigInt(vk_beta_2[0][0]).toString(16) + 'u256' ;%>;
+const BETA_Y1: u256 = <%= '0x' + BigInt(vk_beta_2[1][1]).toString(16) + 'u256' ;%>;
+const BETA_Y2: u256 = <%= '0x' + BigInt(vk_beta_2[1][0]).toString(16) + 'u256' ;%>;
+const GAMMA_X1: u256 = <%= '0x' + BigInt(vk_gamma_2[0][1]).toString(16) + 'u256' ;%>;
+const GAMMA_X2: u256 = <%= '0x' + BigInt(vk_gamma_2[0][0]).toString(16) + 'u256' ;%>;
+const GAMMA_Y1: u256 = <%= '0x' + BigInt(vk_gamma_2[1][1]).toString(16) + 'u256' ;%>;
+const GAMMA_Y2: u256 = <%= '0x' + BigInt(vk_gamma_2[1][0]).toString(16) + 'u256' ;%>;
+const DELTA_X1: u256 = <%= '0x' + BigInt(vk_delta_2[0][1]).toString(16) + 'u256' ;%>;
+const DELTA_X2: u256 = <%= '0x' + BigInt(vk_delta_2[0][0]).toString(16) + 'u256' ;%>;
+const DELTA_Y1: u256 = <%= '0x' + BigInt(vk_delta_2[1][1]).toString(16) + 'u256' ;%>;
+const DELTA_Y2: u256 = <%= '0x' + BigInt(vk_delta_2[1][0]).toString(16) + 'u256' ;%>;
+
+<% for (let i=0; i<IC.length; i++) { %>
+const IC<%=i%>_X: u256 = <%='0x' + BigInt(IC[i][0]).toString(16) + 'u256'%>;
+const IC<%=i%>_Y: u256 = <%='0x' + BigInt(IC[i][1]).toString(16) + 'u256'%>;
+<% } %>
+
+abi Groth16Verifier {
+    fn verify_proof(
+        p_a: [u256; 2],
+        p_b: [[u256; 2]; 2],
+        p_c: [u256; 2],
+        pub_signals: [u256; <%=IC.length-1%>],
+    ) -> bool;
+}
+
+impl Groth16Verifier for Contract {
+    fn verify_proof(
+        p_a: [u256; 2],
+        p_b: [[u256; 2]; 2],
+        p_c: [u256; 2],
+        pub_signals: [u256; <%=IC.length-1%>],
+    ) -> bool {
+        // check inputs < R
+        let mut i = 0;
+        while i < <%=IC.length-1%> {
+            if pub_signals[i] >= R {
+                return false;
+            }
+            i += 1;
+        }
+        // check element in proof < Q
+        if p_a[0] >= Q || p_a[1] >= Q || p_b[0][0] >= Q || p_b[0][1] >= Q || p_b[1][0] >= Q || p_b[1][1] >= Q || p_c[0] >= Q || p_c[1] >= Q {
+            return false;
+        };
+
+        // compute the linear combination of X
+        let mut x: [u256; 2] = [IC0_X, IC0_Y];
+        let mut scalar_mul_input: [u256; 3] = [0; 3];
+        let mut scalar_mul_output: [u256; 2] = [0; 2];
+        let mut point_add_input: [u256; 4] = [0; 4];
+
+        <% for (let i=1; i<IC.length; i++) { %>    
+        scalar_mul_input[0] = IC<%=i%>_X;
+        scalar_mul_input[1] = IC<%=i%>_Y;
+        scalar_mul_input[2] = pub_signals[<%=i-1%>];
+        // input_<%=i-1%> * ic_<%=i%>
+        asm(rA: scalar_mul_output, rB: 0, rC: 1, rD: scalar_mul_input) {
+            ecop rA rB rC rD;
+        }
+        // x + input_<%=i-1%> * ic_<%=i%>
+        point_add_input[0] = x[0];
+        point_add_input[1] = x[1];
+        point_add_input[2] = scalar_mul_output[0];
+        point_add_input[3] = scalar_mul_output[1];
+        asm(rA: x, rB: 0, rC: 0, rD: point_add_input) {
+            ecop rA rB rC rD;
+        }
+        <% } %>
+
+        // check the pairing equation
+        let mut pairing_input: [u256; 24] = [0; 24];
+
+        // -A
+        pairing_input[0] = p_a[0];
+        pairing_input[1] = (Q - p_a[1]) % Q;
+        // B
+        pairing_input[2] = p_b[0][0];
+        pairing_input[3] = p_b[0][1];
+        pairing_input[4] = p_b[1][0];
+        pairing_input[5] = p_b[1][1];
+        // alpha
+        pairing_input[6] = ALPHA_X;
+        pairing_input[7] = ALPHA_Y;
+        // beta
+        pairing_input[8] = BETA_X1;
+        pairing_input[9] = BETA_X2;
+        pairing_input[10] = BETA_Y1;
+        pairing_input[11] = BETA_Y2;
+        // x
+        pairing_input[12] = x[0];
+        pairing_input[13] = x[1];
+        // gamma
+        pairing_input[14] = GAMMA_X1;
+        pairing_input[15] = GAMMA_X2;
+        pairing_input[16] = GAMMA_Y1;
+        pairing_input[17] = GAMMA_Y2;
+        // c
+        pairing_input[18] = p_c[0];
+        pairing_input[19] = p_c[1];
+        // delta
+        pairing_input[20] = DELTA_X1;
+        pairing_input[21] = DELTA_X2;
+        pairing_input[22] = DELTA_Y1;
+        pairing_input[23] = DELTA_Y2;
+
+        let curve_id: u32 = 0;
+        let groups_of_points: u32 = 4;
+
+        let result = asm(rA, rB: curve_id, rC: groups_of_points, rD: pairing_input) {
+            epar rA rB rC rD;
+            rA: u32
+        };
+
+        result != 0
+
+    }
+}
