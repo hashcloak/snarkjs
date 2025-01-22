@@ -5592,6 +5592,23 @@ async function exportSolidityVerifier(zKeyName, templates, logger) {
     return ejs__default["default"].render(template, verificationKey);
 }
 
+// Not ready yet
+// module.exports.generateVerifier_kimleeoh = generateVerifier_kimleeoh;
+
+async function exportSwayVerifier(zKeyName, templates, logger) {
+
+    const verificationKey = await zkeyExportVerificationKey(zKeyName, logger);
+
+    //TODO - fflonkSway
+    // if ("fflonk" === verificationKey.protocol) {
+    //     return fflonkExportSolidityVerifierCmd(verificationKey, templates, logger);
+    // }
+
+    let template = templates[verificationKey.protocol];
+
+    return ejs__default["default"].render(template, verificationKey);
+}
+
 /*
     Copyright 2018 0KIMS association.
 
@@ -12698,6 +12715,18 @@ const commands = [
         action: zkeyExportSolidityCalldata
     },
     {
+        cmd: "zkey export swayverifier [circuit_final.zkey] [verifier.sw]",
+        description: "Creates a verifier in sway",
+        alias: ["zkeswv", "generateswayverifier -vk|verificationkey -v|verifier"],
+        action: zkeyExportSwayVerifier
+    },
+    {
+        cmd: "zkey export swaycalldata [public.json] [proof.json]",
+        description: "Generates sway call parameters ready to be called.",
+        alias: ["zkeswc", "generateswaycall -pub|public -p|proof"],
+        //action: zkeyExportSwayCalldata
+    },
+    {
         cmd: "groth16 setup [circuit.r1cs] [powersoftau.ptau] [circuit_0000.zkey]",
         description: "Creates an initial groth16 pkey file with zero contributions",
         alias: ["g16s", "zkn", "zkey new"],
@@ -13129,6 +13158,44 @@ async function zkeyExportSolidityCalldata(params, options) {
         throw new Error("Invalid Protocol");
     }
     console.log(res);
+
+    return 0;
+}
+
+// sway genverifier [circuit_final.zkey] [verifier.sol]
+async function zkeyExportSwayVerifier(params, options) {
+    let zkeyName;
+    let verifierName;
+
+    if (params.length < 1) {
+        zkeyName = "circuit_final.zkey";
+    } else {
+        zkeyName = params[0];
+    }
+
+    if (params.length < 2) {
+        verifierName = "verifier.sw";
+    } else {
+        verifierName = params[1];
+    }
+
+    if (options.verbose) Logger__default["default"].setLogLevel("DEBUG");
+
+    const templates = {};
+
+    if (await fileExists(path__default["default"].join(__dirname$1, "templates"))) {
+        templates.groth16 = await fs__default["default"].promises.readFile(path__default["default"].join(__dirname$1, "templates", "verifier_groth16.sw.ejs"), "utf8");
+        templates.plonk = await fs__default["default"].promises.readFile(path__default["default"].join(__dirname$1, "templates", "verifier_plonk.sw.ejs"), "utf8");
+        templates.fflonk = await fs__default["default"].promises.readFile(path__default["default"].join(__dirname$1, "templates", "verifier_fflonk.sw.ejs"), "utf8");
+    } else {
+        templates.groth16 = await fs__default["default"].promises.readFile(path__default["default"].join(__dirname$1, "..", "templates", "verifier_groth16.sw.ejs"), "utf8");
+        templates.plonk = await fs__default["default"].promises.readFile(path__default["default"].join(__dirname$1, "..", "templates", "verifier_plonk.sw.ejs"), "utf8");
+        templates.fflonk = await fs__default["default"].promises.readFile(path__default["default"].join(__dirname$1, "..", "templates", "verifier_fflonk.sw.ejs"), "utf8");
+    }
+
+    const verifierCode = await exportSwayVerifier(zkeyName, templates, logger);
+
+    fs__default["default"].writeFileSync(verifierName, verifierCode, "utf-8");
 
     return 0;
 }

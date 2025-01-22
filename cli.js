@@ -263,7 +263,6 @@ const commands = [
         cmd: "zkey export swaycalldata [public.json] [proof.json]",
         description: "Generates sway call parameters ready to be called.",
         alias: ["zkeswc", "generateswaycall -pub|public -p|proof"],
-        action: console.log("unsupported action")
         //action: zkeyExportSwayCalldata
     },
     {

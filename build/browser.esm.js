@@ -9382,6 +9382,23 @@ async function exportSolidityVerifier(zKeyName, templates, logger) {
     return ejs.render(template, verificationKey);
 }
 
+// Not ready yet
+// module.exports.generateVerifier_kimleeoh = generateVerifier_kimleeoh;
+
+async function exportSwayVerifier(zKeyName, templates, logger) {
+
+    const verificationKey = await zkeyExportVerificationKey(zKeyName, logger);
+
+    //TODO - fflonkSway
+    // if ("fflonk" === verificationKey.protocol) {
+    //     return fflonkExportSolidityVerifierCmd(verificationKey, templates, logger);
+    // }
+
+    let template = templates[verificationKey.protocol];
+
+    return ejs.render(template, verificationKey);
+}
+
 /*
     Copyright 2018 0KIMS association.
 
@@ -9413,7 +9430,8 @@ var zkey = /*#__PURE__*/Object.freeze({
     exportJson: zkeyExportJson,
     bellmanContribute: bellmanContribute,
     exportVerificationKey: zkeyExportVerificationKey,
-    exportSolidityVerifier: exportSolidityVerifier
+    exportSolidityVerifier: exportSolidityVerifier,
+    exportSwayVerifier: exportSwayVerifier
 });
 
 /*
