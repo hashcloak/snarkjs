@@ -1,0 +1,66 @@
+// SPDX-License-Identifier: GPL-3.0
+/*
+Copyright 2021 0KIMS association.
+
+This file is generated with [snarkJS](https://github.com/iden3/snarkjs).
+
+snarkJS is a free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+snarkJS is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
+License for more details.
+
+You should have received a copy of the GNU General Public License
+along with snarkJS. If not, see
+<https: //www.gnu.org/licenses />.
+*/
+
+contract;
+
+// Omega
+const w1: u256 = <%='0x' + BigInt(w).toString(16) + 'u256' ;%>;
+// Scalar field size
+const q: u256  = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001u256;
+// Base field size
+const qf: u256 = 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47u256;
+
+// [1]_1
+const G1x: u256 = 0x1u256;
+const G1y: u256 = 0x2u256;
+// [1]_2
+const G2x1: u256 = 0x1800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6edu256;
+const G2x2: u256 = 0x198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c2u256;
+const G2y1: u256 = 0x12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daau256;
+const G2y2: u256 = 0x90689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975bu256;
+
+// Verification Key data
+const n: u32         = <%=2**power%>;
+const nPublic: u16   = <%=nPublic%>;
+const nLagrange: u16 = <%=Math.max(nPublic, 1)%>;
+
+const Qmx: u256  = <%='0x' + BigInt(Qm[0]).toString(16) + 'u256' ;%>;
+const Qmy: u256  = <%='0x' + BigInt(Qm[0] == "0" ? "0" : Qm[1]).toString(16) + 'u256' ;%>;
+const Qlx: u256  = <%='0x' + BigInt(Ql[0]).toString(16) + 'u256' ;%>;
+const Qly: u256  = <%='0x' + BigInt(Ql[0] == "0" ? "0" : Ql[1]).toString(16) + 'u256' ;%>;
+const Qrx: u256  = <%='0x' + BigInt(Qr[0]).toString(16) + 'u256' ;%>;
+const Qry: u256  = <%='0x' + BigInt(Qr[0] == "0" ? "0" : Qr[1]).toString(16) + 'u256' ;%>;
+const Qox: u256  = <%='0x' + BigInt(Qo[0]).toString(16) + 'u256' ;%>;
+const Qoy: u256  = <%='0x' + BigInt(Qo[0] == "0" ? "0" : Qo[1]).toString(16) + 'u256' ;%>;
+const Qcx: u256  = <%='0x' + BigInt(Qc[0]).toString(16) + 'u256' ;%>;
+const Qcy: u256  = <%='0x' + BigInt(Qc[0] == "0" ? "0" : Qc[1]).toString(16) + 'u256' ;%>;
+const S1x: u256  = <%='0x' + BigInt(S1[0]).toString(16) + 'u256' ;%>;
+const S1y: u256  = <%='0x' + BigInt(S1[0] == "0" ? "0" : S1[1]).toString(16) + 'u256' ;%>;
+const S2x: u256  = <%='0x' + BigInt(S2[0]).toString(16) + 'u256' ;%>;
+const S2y: u256  = <%='0x' + BigInt(S2[0] == "0" ? "0" : S2[1]).toString(16) + 'u256' ;%>;
+const S3x: u256  = <%='0x' + BigInt(S3[0]).toString(16) + 'u256' ;%>;
+const S3y: u256  = <%='0x' + BigInt(S3[0] == "0" ? "0" : S3[1]).toString(16) + 'u256' ;%>;
+const k1: u256   = <%='0x' + BigInt(k1).toString(16) + 'u256' ;%>;
+const k2: u256   = <%='0x' + BigInt(k2).toString(16) + 'u256' ;%>;
+const X2x1: u256 = <%='0x' + BigInt(X_2[0][0]).toString(16) + 'u256' ;%>;
+const X2x2: u256 = <%='0x' + BigInt(X_2[0][1]).toString(16) + 'u256' ;%>;
+const X2y1: u256 = <%='0x' + BigInt(X_2[1][0]).toString(16) + 'u256' ;%>;
+const X2y2: u256 = <%='0x' + BigInt(X_2[1][1]).toString(16) + 'u256' ;%>;
