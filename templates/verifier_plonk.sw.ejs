@@ -210,4 +210,57 @@ impl Proof {
       return [beta, gamma, alpha, xi, v, u]
   }
 
+  // TODO return more pEval_i , where i=0..nPublic
+  // and pEval_i = wi^i * (pXi-wi^i)
+  // TODO calculate inverse to finish up the value
+  // num, denom, xi^n
+  fn calculateLagrange(self, xi: u256, w: u256) -> (u256, u256, u256) {
+    // n(xi-w) mod q
+    let mut denom: u256 = 0;
+    let temp = xi - w;
+    // mem[$rA,32] = (b*c)%d
+    asm (rA: denom, rB: temp, rC: n, rD: q) {
+      wqmm rA rB rC rD;
+    };
+    
+    // 2. xi^n-w, where in practice n is a power of 2
+    let power = <%=power%>;
+    let mut i = 0;
+    let mut xi_pow_n: u256 = xi;
+    while i < power {
+        // mem[$rA,32] = (b*c)%d
+        asm (rA: xi_pow_n, rB: xi_pow_n, rC: xi_pow_n, rD: q) {
+          wqmm rA rB rC rD;
+        };
+
+        i = i + 1;
+    }
+    let num: u256 = xi_pow_n - w;
+
+    // TODO invert denom
+    // return (xiˆn-w) / n*(xi-w), xi_pow_n
+    return (num, denom, xi_pow_n);
+  }
+
+  // SUM(w_i*L_i(xi)) 
+  fn calculatePI(self, pEval: [u256; <%=nPublic%>], publicInput: [u256; <%=nPublic%>]) -> u256 {
+      let mut res: u256 = 0;
+      let mut temp: u256 = 0;
+      let mut i = 0;
+      while i < nPublic {
+        // temp = pEval[i]*publicInput[i] mod q
+        asm (rA: temp, rB: pEval[i], rC: publicInput[i], rD: q) {
+            wqmm rA rB rC rD;
+        };
+        // accumulate all values in res
+        // res = res + temp
+        asm (rA: res, rB: res, rC: temp, rD: q) {
+          wqam rA rB rC rD;
+        };
+        i = i + 1;
+      }
+
+      // Same as in Solidity code, negate PI
+      return q - res;
+  }
 }
