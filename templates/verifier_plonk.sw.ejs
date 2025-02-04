@@ -263,4 +263,332 @@ impl Proof {
       // Same as in Solidity code, negate PI
       return q - res;
   }
+
+  // r0 := PI(z) − L1(z)α2 − α(¯a + β¯sσ1 + γ)(¯b + β¯sσ2 + γ)(¯c + γ)¯zω,
+  fn calculateR0(self,
+    PIz: u256, 
+    pEval_l1: u256,
+    alpha: u256,
+    alpha_squared: u256,
+    beta: u256,
+    gamma: u256) -> u256 {
+      ///// SECOND TERM
+      // L1(z)α2 
+      let mut second_term: u256 = 0;
+      asm (rA: second_term, rB: pEval_l1, rC: alpha_squared, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      
+      ///// THIRD TERM
+      // part 1: (¯a + β¯sσ1 + γ)
+      
+      // Step 1: third_term_1 =  β¯sσ1
+      let mut third_term_1: u256 = 0;
+      asm (rA: third_term_1, rB: beta, rC: self.eval_s1, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      // Step 2: third_term_1 =  ¯a + β¯sσ1
+      asm (rA: third_term_1, rB: self.eval_a, rC: third_term_1, rD: q) {
+        wqam rA rB rC rD;
+      };
+      // Step 3: third_term_1 = ¯a + β¯sσ1 + γ
+      asm (rA: third_term_1, rB: third_term_1, rC: gamma, rD: q) {
+        wqam rA rB rC rD;
+      };
+
+      // part 2: (¯b + β¯sσ2 + γ)
+      let mut third_term_2: u256 = 0;
+      asm (rA: third_term_2, rB: beta, rC: self.eval_s2, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      asm (rA: third_term_2, rB: self.eval_b, rC: third_term_2, rD: q) {
+        wqam rA rB rC rD;
+      };
+      asm (rA: third_term_2, rB: third_term_2, rC: gamma, rD: q) {
+        wqam rA rB rC rD;
+      };
+
+      // part 3: (¯c + γ)
+      let mut third_term_3: u256 = 0;
+      asm (rA: third_term_3, rB: self.eval_c, rC: gamma, rD: q) {
+        wqam rA rB rC rD;
+      };
+
+      // α(¯a + β¯sσ1 + γ)(¯b + β¯sσ2 + γ)(¯c + γ)¯zω
+      let mut temp0: u256 = 0;
+      asm (rA: temp0, rB: alpha, rC: third_term_1, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      let mut temp1: u256 = 0;
+      asm (rA: temp1, rB: third_term_2, rC: third_term_3, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      let mut third_term: u256 = 0;
+      asm (rA: third_term, rB: self.eval_zw, rC: temp0, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      asm (rA: third_term, rB: third_term, rC: temp1, rD: q) {
+        wqmm rA rB rC rD;
+      };
+
+      // PI(z) − L1(z)α2 − α(¯a + β¯sσ1 + γ)(¯b + β¯sσ2 + γ)(¯c + γ)¯zω
+      // PI(z) + (q - L1(z)α2) + (q - α(¯a + β¯sσ1 + γ)(¯b + β¯sσ2 + γ)(¯c + γ)¯zω)
+
+      let mut q_minus_second: u256 = q - second_term;
+      let mut q_minus_third: u256 = q - third_term;
+
+      let mut res: u256 = 0;
+      asm (rA: res, rB: PIz, rC: q_minus_second, rD: q) {
+        wqam rA rB rC rD;
+      };
+      asm (rA: res, rB: res, rC: q_minus_third, rD: q) {
+        wqam rA rB rC rD;
+      };
+      return res;
+  }
+  
+  fn calculateD(self,
+    pEval_l1: u256,
+    alpha: u256,
+    alpha_squared: u256,
+    beta: u256,
+    gamma: u256,
+    xi: u256, // xi
+    xi_pow_n: u256, // xi^n
+    v: u256,
+    u: u256) -> G1Point {
+
+      //// TERM 1
+      let mut point_term_1 = Qc;
+      // eval_a*eval_b*Gm
+      let mut temp0: u256 = 0;
+      asm (rA: temp0, rB: self.eval_a, rC: self.eval_b, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      let temp0_point = Qm.u256_mul(temp0);
+      point_term_1 = point_term_1.point_add(temp0_point);
+      //eval_a*Ql
+      let temp1_point = Ql.u256_mul(self.eval_a);
+      point_term_1 = point_term_1.point_add(temp1_point);
+      //eval_b*Qr
+      let temp2_point = Qr.u256_mul(self.eval_b);
+      point_term_1 = point_term_1.point_add(temp2_point);
+      //eval_c*Qo
+      let temp3_point = Qo.u256_mul(self.eval_c);
+      point_term_1 = point_term_1.point_add(temp3_point);
+
+      //// TERM 2
+      // (¯a + βz + γ)
+      let mut betaxi: u256 = 0;
+      asm (rA: betaxi, rB: beta, rC: xi, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      let mut val1: u256 = 0;
+      asm (rA: val1, rB: betaxi, rC: self.eval_a, rD: q) {
+        wqam rA rB rC rD;
+      };
+      asm (rA: val1, rB: val1, rC: gamma, rD: q) {
+        wqam rA rB rC rD;
+      };
+
+      // (¯b + βk1z + γ)
+      let mut val2: u256 = 0;
+      asm (rA: val2, rB: betaxi, rC: k1, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      asm (rA: val2, rB: val2, rC: self.eval_b, rD: q) {
+        wqam rA rB rC rD;
+      };
+      asm (rA: val2, rB: val2, rC: gamma, rD: q) {
+        wqam rA rB rC rD;
+      };
+
+      // (¯c + βk2z + γ)
+      let mut val3: u256 = 0;
+      asm (rA: val3, rB: betaxi, rC: k2, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      asm (rA: val3, rB: val3, rC: self.eval_c, rD: q) {
+        wqam rA rB rC rD;
+      };
+      asm (rA: val3, rB: val3, rC: gamma, rD: q) {
+        wqam rA rB rC rD;
+      };
+
+      // (¯a + βz + γ)(¯b + βk1z + γ)(¯c + βk2z + γ)α
+      let mut d2a: u256 = 0;
+      asm (rA: d2a, rB: val1, rC: val2, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      asm (rA: d2a, rB: d2a, rC: val3, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      asm (rA: d2a, rB: d2a, rC: alpha, rD: q) {
+        wqmm rA rB rC rD;
+      };
+
+      // L1(z)α2
+      let mut d3a: u256 = 0;
+      asm (rA: d3a, rB: pEval_l1, rC: alpha_squared, rD: q) {
+        wqmm rA rB rC rD;
+      };
+
+      // (¯a + βz + γ)(¯b + βk1z + γ)(¯c + βk2z + γ)α + L1(z)α2 + u
+      let mut u256_term_2: u256 = 0;
+      asm (rA: u256_term_2, rB: d2a, rC: d3a, rD: q) {
+        wqam rA rB rC rD;
+      };
+      asm (rA: u256_term_2, rB: u256_term_2, rC: u, rD: q) {
+        wqam rA rB rC rD;
+      };
+
+      // ((¯a + βz + γ)(¯b + βk1z + γ)(¯c + βk2z + γ)α + L1(z)α2 + u) · [z]1
+      let point_term2 = self.proof_Z.u256_mul(u256_term_2);
+
+      //// TERM 3
+      // (¯a + β¯sσ1 + γ)
+      asm (rA: val1, rB: beta, rC: self.eval_s1, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      asm (rA: val1, rB: val1, rC: self.eval_a, rD: q) {
+        wqam rA rB rC rD;
+      };
+      asm (rA: val1, rB: val1, rC: gamma, rD: q) {
+        wqam rA rB rC rD;
+      };
+
+      // (¯b + β¯sσ2 + γ)
+      asm (rA: val2, rB: beta, rC: self.eval_s2, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      asm (rA: val2, rB: val2, rC: self.eval_b, rD: q) {
+        wqam rA rB rC rD;
+      };
+      asm (rA: val2, rB: val2, rC: gamma, rD: q) {
+        wqam rA rB rC rD;
+      };
+
+      // αβ¯zω
+      asm (rA: val3, rB: alpha, rC: beta, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      asm (rA: val3, rB: val3, rC: self.eval_zw, rD: q) {
+        wqmm rA rB rC rD;
+      };
+
+      // (¯a + β¯sσ1 + γ)(¯b + β¯sσ2 + γ)αβ¯zω
+      let mut u256_term3: u256 = 0;
+      asm (rA: u256_term3, rB: val1, rC: val2, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      asm (rA: u256_term3, rB: u256_term3, rC: val3, rD: q) {
+        wqmm rA rB rC rD;
+      };
+
+      // (¯a + β¯sσ1 + γ)(¯b + β¯sσ2 + γ)αβ¯zω · [sσ3]1
+      let point_term3 = S3.u256_mul(u256_term3);
+
+      //// TERM 4
+      let mut point_term4: G1Point = self.proof_T1;
+      // xi^n[t_mid]1
+      let mut temp_point: G1Point = self.proof_T2.u256_mul(xi_pow_n);
+      point_term4 = point_term4.point_add(temp_point);
+      
+      // xi^2n
+      asm (rA: val2, rB: xi_pow_n, rC: xi_pow_n, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      // xi^2n · [t_hi]1
+      temp_point = self.proof_T3.u256_mul(val2);
+      point_term4 = point_term4.point_add(temp_point);
+
+      // ZH(z)([tlo]1 + zn · [tmid]1 + z2n · [thi]1)
+      point_term4 = point_term4.u256_mul(xi_pow_n - 1);
+
+      // negate point term3
+      let neg_y_3: u256 = qf - point_term3.y;
+      let neg_term3 = G1Point{
+          x: point_term3.x,
+          y: neg_y_3
+      };
+      let mut neg_y_bytes: [u8; 64] = neg_term3.to_bytes();
+
+      // negate point term4
+      let neg_y_4 = qf - point_term4.y;
+      let neg_term4 = G1Point{
+          x: point_term4.x,
+          y: neg_y_4
+      };
+      let mut res: G1Point = point_term_1.point_add(point_term2);
+      res = res.point_add(neg_term3);
+      res = res.point_add(neg_term4);
+      return res;
+  }
+
+  fn calculateF(self,
+    v: u256,
+    v2: u256,
+    v3: u256,
+    v4: u256,
+    v5: u256,
+    D: G1Point
+  ) -> G1Point {
+      // D + v · [a]1
+      let mut temp: G1Point = self.proof_A.u256_mul(v);
+      let mut res: G1Point = D.point_add(temp);
+      // v2 · [b]1
+      temp = self.proof_B.u256_mul(v2);
+      res = res.point_add(temp);
+      // v3 · [c]1
+      temp = self.proof_C.u256_mul(v3);
+      res = res.point_add(temp);
+      // v4 · [sσ1]1
+      temp = S1.u256_mul(v4);
+      res = res.point_add(temp);
+      // v5 · [sσ2]1
+      temp = S2.u256_mul(v5);
+      res = res.point_add(temp);
+      return res; 
+  }
+
+  fn calculateE(self,
+    r0: u256,
+    u: u256,
+    v: u256,
+    v2: u256,
+    v3: u256,
+    v4: u256,
+    v5: u256,
+    ) -> G1Point {
+      // −r0 + v¯a + v2¯b + v3¯c + v4¯sσ1 + v5¯sσ2 + u¯zω
+      // q-r0
+      let mut acc_u256: u256 = q - r0;
+      let mut temp: u256 = 0;
+      asm (rA: temp, rB: v, rC: self.eval_a, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      acc_u256 += temp;
+      asm (rA: temp, rB: v2, rC: self.eval_b, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      acc_u256 += temp;
+      asm (rA: temp, rB: v3, rC: self.eval_c, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      acc_u256 += temp;
+      asm (rA: temp, rB: v4, rC: self.eval_s1, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      acc_u256 += temp;
+      asm (rA: temp, rB: v5, rC: self.eval_s2, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      acc_u256 += temp;
+      asm (rA: temp, rB: u, rC: self.eval_zw, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      acc_u256 += temp;
+      let res = G1.u256_mul(acc_u256);
+      return res; 
+  }
 }
