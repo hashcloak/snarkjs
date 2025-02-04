@@ -64,3 +64,150 @@ const X2x1: u256 = <%='0x' + BigInt(X_2[0][0]).toString(16) + 'u256' ;%>;
 const X2x2: u256 = <%='0x' + BigInt(X_2[0][1]).toString(16) + 'u256' ;%>;
 const X2y1: u256 = <%='0x' + BigInt(X_2[1][0]).toString(16) + 'u256' ;%>;
 const X2y2: u256 = <%='0x' + BigInt(X_2[1][1]).toString(16) + 'u256' ;%>;
+
+const Qm: G1Point = G1Point {x: Qmx, y: Qmy };
+const Ql: G1Point = G1Point {x: Qlx, y: Qly };
+const Qr: G1Point = G1Point {x: Qrx, y: Qry };
+const Qo: G1Point = G1Point {x: Qox, y: Qoy };
+const Qc: G1Point = G1Point {x: Qcx, y: Qcy };
+const S1: G1Point = G1Point {x: S1x, y: S1y };
+const S2: G1Point = G1Point {x: S2x, y: S2y };
+const S3: G1Point = G1Point {x: S3x, y: S3y };
+
+struct Proof {
+  pub proof_A: G1Point,
+  pub proof_B: G1Point,
+  pub proof_C: G1Point,
+  pub proof_Z: G1Point,
+  pub proof_T1: G1Point,
+  pub proof_T2: G1Point,
+  pub proof_T3: G1Point,
+  pub proof_Wxi: G1Point,
+  pub proof_Wxiw: G1Point,
+  pub eval_a: u256,
+  pub eval_b: u256,
+  pub eval_c: u256,
+  pub eval_s1: u256,
+  pub eval_s2: u256,
+  pub eval_zw: u256,
+}
+
+
+impl Proof {
+
+  // beta, gamma, alpha, xi (=zeta), v, u
+  fn get_challenges(self, publicInput: [u256; <%=nPublic%>]) -> [b256;6] {
+      let mut transcript: Bytes = Bytes::new();
+
+      ////// BETA
+      // Qmx
+      // Qmy
+      transcript.append(Qmx.to_be_bytes());
+      transcript.append(Qmy.to_be_bytes());
+      // Qlx
+      // Qly
+      transcript.append(Qlx.to_be_bytes());
+      transcript.append(Qly.to_be_bytes());
+      // Qrx
+      // Qry
+      transcript.append(Qrx.to_be_bytes());
+      transcript.append(Qry.to_be_bytes());
+      // Qox
+      // Qoy
+      transcript.append(Qox.to_be_bytes());
+      transcript.append(Qoy.to_be_bytes());
+      // Qcx
+      // Qcy
+      transcript.append(Qcx.to_be_bytes());
+      transcript.append(Qcy.to_be_bytes());
+      // S1x
+      // S1y
+      transcript.append(S1x.to_be_bytes());
+      transcript.append(S1y.to_be_bytes());
+      // S2x
+      // S2y
+      transcript.append(S2x.to_be_bytes());
+      transcript.append(S2y.to_be_bytes());
+      // S3x
+      // S3y
+      transcript.append(S3x.to_be_bytes());
+      transcript.append(S3y.to_be_bytes());
+      // nPublic*32 bytes of public data
+      let mut i = 0;
+      while i < <%=nPublic%> {
+          transcript.append(Bytes::from(publicInput[i].to_be_bytes()));
+          i += 1;
+      }
+      // 64 bytes of pA
+      transcript.append(self.proof_A.bytes());
+      // 64 bytes of pB
+      transcript.append(self.proof_B.bytes());
+      // 64 bytes of pC
+      transcript.append(self.proof_C.bytes());
+      // beta = hash(transcript) mod q
+      let beta: b256 = keccak256(transcript);
+      asm (rA: beta, rC: ZERO, rD: q) {
+          wqam rA rA rC rD;
+      };
+      
+      ////// GAMMA
+      // gamma = hash(beta) mod q
+      // Note: this follows snarkjs Plonk verifier beta = hash(transcript) and gamma = hash(beta)
+      // While the paper does beta = hash(transcript, 0) and gamma=hash(transcript,1))
+      let gamma: b256 = keccak256(beta);
+      asm (rA: gamma, rC: ZERO, rD: q) {
+          wqam rA rA rC rD;
+      };
+      
+      ////// ALPHA
+      // alpha = hash(beta, gamma, proof_Z) mod q
+      let mut transcript: Bytes = Bytes::new();
+      transcript.append(Bytes::from(beta));
+      transcript.append(Bytes::from(gamma));
+      transcript.append(self.proof_Z.bytes());
+      let alpha: b256 = keccak256(transcript);
+      asm (rA: alpha, rC: ZERO, rD: q) {
+          wqam rA rA rC rD;
+      };
+      
+      ////// XI (xi in Plonk paper)
+      // xi = hash(alpha, proof_T1, proof_T2, proof_T3) mod qs
+      let mut transcript: Bytes = Bytes::new();
+      transcript.append(Bytes::from(alpha));
+      transcript.append(self.proof_T1.bytes());
+      transcript.append(self.proof_T2.bytes());
+      transcript.append(self.proof_T3.bytes());
+      let xi: b256 = keccak256(transcript);
+      asm (rA: xi, rC: ZERO, rD: q) {
+          wqam rA rA rC rD;
+      };
+
+      ////// V
+      // v = hash(xi, eval_a, eval_b, eval_c, eval_s1, eval_s2, eval_zw)
+      let mut transcript: Bytes = Bytes::new();
+      transcript.append(Bytes::from(xi));
+      transcript.append(self.eval_a.to_be_bytes());
+      transcript.append(self.eval_b.to_be_bytes());
+      transcript.append(self.eval_c.to_be_bytes());
+      transcript.append(self.eval_s1.to_be_bytes());
+      transcript.append(self.eval_s2.to_be_bytes());
+      transcript.append(self.eval_zw.to_be_bytes());
+      let v: b256 = keccak256(transcript);
+      asm (rA: v, rC: ZERO, rD: q) {
+          wqam rA rA rC rD;
+      };
+
+      ////// U
+      // u = hash(wxi, wxiw)
+      let mut transcript: Bytes = Bytes::new();
+      transcript.append(self.proof_Wxi.bytes());
+      transcript.append(self.proof_Wxiw.bytes());
+      let u: b256 = keccak256(transcript);
+      asm (rA: u, rC: ZERO, rD: q) {
+          wqam rA rA rC rD;
+      };
+
+      return [beta, gamma, alpha, xi, v, u]
+  }
+
+}
