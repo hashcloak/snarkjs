@@ -92,7 +92,6 @@ struct Proof {
   pub eval_zw: u256,
 }
 
-
 impl Proof {
 
   // beta, gamma, alpha, xi (=zeta), v, u
@@ -250,7 +249,7 @@ impl Proof {
       while i < nPublic {
         // temp = pEval[i]*publicInput[i] mod q
         asm (rA: temp, rB: pEval[i], rC: publicInput[i], rD: q) {
-            wqmm rA rB rC rD;
+          wqmm rA rB rC rD;
         };
         // accumulate all values in res
         // res = res + temp
@@ -590,5 +589,172 @@ impl Proof {
       acc_u256 += temp;
       let res = G1.u256_mul(acc_u256);
       return res; 
+  }
+
+
+  // In this case, public input has length 1
+  pub fn verify(self, publicInput: [u256; <%=nPublic%>]) -> bool {
+      // 1. Check points are on curve
+      // ([a]1, [b]1, [c]1, [z]1, [tlo]1, [tmid]1, [thi]1, [Wz]1, [Wzω]1) ∈ G91
+      if !(on_bn128_curve(self.proof_A)
+          && on_bn128_curve(self.proof_B)
+          && on_bn128_curve(self.proof_C)
+          && on_bn128_curve(self.proof_Z)
+          && on_bn128_curve(self.proof_T1)
+          && on_bn128_curve(self.proof_T2)
+          && on_bn128_curve(self.proof_T3)
+          && on_bn128_curve(self.proof_Wxi)
+          && on_bn128_curve(self.proof_Wxiw)) {
+          return false;
+      }
+      // 2. Validate (¯a, ¯b, ¯c,¯sσ1,¯sσ2, ¯zω) ∈ F6 (u256 field, q)
+      if !(self.eval_a < q
+          && self.eval_b < q
+          && self.eval_c < q
+          && self.eval_s1 < q
+          && self.eval_s2 < q
+          && self.eval_zw < q) {
+        return false; 
+      }
+      // 3. Validate public input 
+      // (wi)i∈[ℓ] ∈ Fℓ
+      let mut i = 0;
+      while i < <%=nPublic%> {
+          if publicInput[i] >= q {
+            return false; 
+          }
+          i += 1;
+      }
+      
+      // Step 4: Recompute challenges beta, gamma, alpha, xi, v, and u in the field F
+      // (β, γ, α, z, v, u)
+      let challenges = self.get_challenges(publicInput);
+      let beta = u256::from(challenges[0]);
+      let gamma = u256::from(challenges[1]);
+      let alpha = u256::from(challenges[2]);
+      let xi = u256::from(challenges[3]);
+      let v = u256::from(challenges[4]);
+      let u = u256::from(challenges[5]);
+
+      // Step 5&6: compute w(z^n-1)/n*(z-w)
+      let w: u256 = 1;
+      let mut pEval: [u256; <%=nPublic%>] = [0u256;<%=nPublic%>];
+      // TODO pEval has to be updated by calculateLagrange
+      // TODO inversion in calculateLagrange to finalize computation
+      let (num, denom, xi_pow_n) = self.calculateLagrange(xi, w);
+
+      // Step 7: compute PI (public input polynomial evaluation)
+      // sum(w_i*L_i(xi)) 
+      // Following Solidity implementation -sum(w_i*L_i(xi))
+      let PI = self.calculatePI(pEval, publicInput);
+
+      // Step 8: compute R0
+      let mut alpha_squared: u256 = 0;
+      // mem[$rA,32] = (b*c)%d
+      asm (rA: alpha_squared, rB: alpha, rC: alpha, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      let R0 = self.calculateR0(
+        PI, 
+        pEval[0], // TODO verify this
+        alpha,
+        alpha_squared,
+        beta,
+        gamma
+      );
+      
+      // Step 9: compute D
+      let D = self.calculateD(
+        pEval[0], // TODO verify this
+        alpha,
+        alpha_squared,
+        beta,
+        gamma,
+        xi,
+        xi_pow_n,
+        v,
+        u
+      );
+
+      // Step 10: compute F
+      let mut v2: u256 = 0;
+      let mut v3: u256 = 0;
+      let mut v4: u256 = 0;
+      let mut v5: u256 = 0;
+      asm (rA: v2, rB: v, rC: v, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      asm (rA: v3, rB: v2, rC: v, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      asm (rA: v4, rB: v3, rC: v, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      asm (rA: v5, rB: v4, rC: v, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      let F: G1Point = self.calculateF(v, v2, v3, v4, v5, D);
+
+      // Step 11: compute E
+      let E: G1Point = self.calculateE(R0, u, v, v2, v3, v4, v5);
+
+      // Step 12: check pairing
+      // A1 = [Wz]1 + u · [Wzω]1
+      let mut a1: G1Point = self.proof_Wxiw.u256_mul(u);
+      a1 = a1.point_add(self.proof_Wxi);
+      let a1_neg = G1Point {
+        x: a1.x,
+        y: (qf - a1.y) % qf
+      };
+
+      // B1 = z · [Wz]1 + uzω · [Wzω]1 + [F]1 − [E]1
+      let mut b1: G1Point = self.proof_Wxi.u256_mul(xi);
+      let mut temp: u256 = 0;
+      asm (rA: temp, rB: u, rC: xi, rD: q) {
+        wqmm rA rB rC rD;
+      };
+      asm (rA: temp, rB: temp, rC: w1, rD: q) {
+        wqmm rA rB rC rD;
+      };
+
+      b1 = b1.point_add(self.proof_Wxiw.u256_mul(temp));
+      b1 = b1.point_add(F);
+      let E_neg = G1Point {
+          x: E.x,
+          y: (qf - E.y) % qf
+      };
+      b1 = b1.point_add(E_neg);
+
+      // Serialize inputs for EPAR
+      let mut pairing_input: [u256; 12] = [0; 12];
+
+      // Pairing input: -A1, X2
+      pairing_input[0] = a1_neg.x;
+      pairing_input[1] = a1_neg.y;
+      // g2: [[x1, x0], [y1, y0]]
+      pairing_input[3] = X2x1;
+      pairing_input[2] = X2x2;
+      pairing_input[5] = X2y1;
+      pairing_input[4] = X2y2;
+
+      // Pairing input: B1, [1]_2
+      pairing_input[6] = b1.x;
+      pairing_input[7] = b1.y;
+      // g2: [[x1, x0], [y1, y0]]
+      pairing_input[9] = G2x1;
+      pairing_input[8] = G2x2;
+      pairing_input[11] = G2y1;
+      pairing_input[10] = G2y2;
+
+      // Perform pairing check
+      let curve_id: u32 = 0;
+      let groups_of_points: u32 = 2;
+      
+      let result: u32 = asm(rA, rB: curve_id, rC: groups_of_points, rD: pairing_input) {
+          epar rA rB rC rD;
+          rA: u32
+      };
+      
+      result != 0
   }
 }
