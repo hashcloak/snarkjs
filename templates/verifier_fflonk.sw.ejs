@@ -354,8 +354,6 @@ fn compute_challenges(proof: &Proof, pub_signals: [u256;<%=Math.max(nPublic, 1)%
     transcript.append(proof.C1.y.to_be_bytes());
 
     let mut beta = u256::from(keccak256(transcript));
-    // TODO the mod function result into failing of test. why?
-    // workaround: using the 256bit addmod 
     beta = beta.addmod(ZERO);
 
     let mut gamma = u256::from(keccak256(beta.to_be_bytes()));
@@ -408,8 +406,7 @@ fn compute_challenges(proof: &Proof, pub_signals: [u256;<%=Math.max(nPublic, 1)%
     let xi_challenge = xin;
 
     // Compute xi^n
-    //TODO: power must  be generated per contract
-    let power = 11;
+    let power = <%= power %>;
     let mut i = 0;
     while i < power {
         xin = asm (rA: xin, rB: xin, rC: xin, rD: Q) {
@@ -771,8 +768,7 @@ fn compute_li_s2(roots: Roots, challenges: Challenges) -> [u256; 6] {
 }
 
 fn inverse_array(ref mut array: Inverse_vars, ref mut pEval_l: [u256;<%=Math.max(nPublic, 1)%>], pEval_inv: u256) -> (Inverse_vars, [u256;<%=Math.max(nPublic, 1)%>]){
-    
-    //TODO: this size length should the res array
+
     let size = 21 + u64::max(N_PUBLIC, 1);
 
     let mut res: [u256; <%=Math.max(nPublic, 1) + 21%>] = [0; <%=Math.max(nPublic, 1) + 21%>];
@@ -1014,9 +1010,7 @@ fn compute_inversion(roots: Roots, challenges: Challenges, zh_inv: u256, eval_in
     let xi = challenges.xi;
 
     let mut i = 1;
-    // TODO: change pEval_l: [u256;1] to max(1, N_PUBLIC)
-
-    let mut pEval_l: [u256;1] = [0;1];
+    let mut pEval_l: [u256;<%=Math.max(nPublic, 1)%>] = [0;<%=Math.max(nPublic, 1)%>];
     while i <= u64::max(N_PUBLIC, 1) {
         pEval_l[i-1] = u256::from(N).mulmod(xi.submod(w));
 
