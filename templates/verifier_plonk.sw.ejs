@@ -21,6 +21,7 @@ along with snarkJS. If not, see
 
 contract;
 // TODO clear this import
+mod lib;
 use lib::{G1Point, G2Point, on_bn128_curve};
 use std::hash::Hash;
 use std::hash::{keccak256, sha256};
@@ -117,14 +118,6 @@ impl u256 {
       res
   }
 
-  fn mulmodu32(self, other: u32) -> u256 {
-      let mut res: u256 = 0;
-      asm (rA: res, rB: self, rC: other, rD: q) {
-      wqmm rA rB rC rD;
-      }
-      res
-  }
-
   fn submod(self, other: u256) -> u256 {
       let mut res: u256 = q - other;
       asm (rA: res, rB: self, rD: q) {
@@ -135,6 +128,78 @@ impl u256 {
 }
 
 impl Proof {
+
+  // Computes the inverse using the extended euclidean algorithm
+  pub fn inverse(a: u256) -> u256 {
+      let mut t = 0;
+      let mut newt = 1;
+      let mut r = q;
+      let mut newr = a;
+      let mut quotient = 0;
+      let mut aux = 0;
+      while newr != 0 {
+        quotient = r / newr;
+        // aux = t - quotient*newt
+        let mut qt = 0;
+        asm (rA: qt, rB: quotient, rC: newt, rD: q){
+          wqmm rA rB rC rD;
+        }
+        qt = q - qt;
+        asm (rA: aux, rB: t, rC: qt, rD: q){
+          wqam rA rB rC rD;
+        }
+        t = newt;
+        newt = aux;
+        // aux = r - quotient*newr
+        let mut qr = 0;
+        asm (rA: qr, rB: quotient, rC: newr, rD:q){
+          wqmm rA rB rC rD;
+        }
+        qr = q - qr;
+        asm (rA: aux, rB: r, rC: qr, rD: q){
+          wqam rA rB rC rD;
+        }
+        r = newr;
+        newr = aux;
+      };
+      t
+  }
+  // Computes the inverse of an array of values
+  // Array length n will change based on the input
+  fn inverse_array(ref mut vals: [u256; <%=Math.max(nPublic, 1)%>]){
+      // aux_array length = n-1
+      //NOTE - for array length = 1, aux_array will have type [u256;0], 
+      // seems like the compiler won't complain about it
+      let mut aux_array: [u256; <%=Math.max(nPublic, 1)-1%>] = [0; <%=Math.max(nPublic, 1)-1%>];
+      let mut pos = 1;
+      let mut acc = vals[0];
+      // calculate acc = vals[0]*vals[1]*...*vals[n]
+      // pos < vals length
+      while pos < <%=Math.max(nPublic, 1)%> {
+        aux_array[pos-1] = acc;
+        asm (rA: acc, rB: vals[pos], rC:q){
+          wqmm rA rA rB rC;
+        }
+        pos += 1;
+      }
+      // calculate inverse of acc
+      acc = Self::inverse(acc);
+      // pos will be pointing at n+1
+      pos -= 1;
+      // calaulate inverse for every val
+      while pos > 0 {
+        let inv = 0;
+        asm (rA: inv, rB: acc, rC: aux_array[pos-1], rD:q){
+          wqmm rA rB rC rD;
+        }
+        asm (rA: acc, rB: vals[pos], rC:q){
+          wqmm rA rA rB rC;
+        }
+        vals[pos] = inv;
+        pos -= 1;
+      }
+      vals[pos] = acc;
+  }
 
   // beta, gamma, alpha, xi (=zeta), v, u
   fn get_challenges(self, publicInput: [u256; <%=nPublic%>]) -> [b256;6] {
@@ -251,8 +316,8 @@ impl Proof {
       return [beta, gamma, alpha, xi, v, u]
   }
 
-  // TODO calculate inverses
-  fn calculateLagrange(self, xi: u256, ref mut pEval: [u256; <%=nPublic%>]) -> u256 {
+  // also when there's no pub input, there should be an output for calculateLagrange.
+  fn calculateLagrange(self, xi: u256, ref mut pEval: [u256; <%=Math.max(nPublic, 1)%>]) -> u256 {
     // We want for i=0..nPublic: Li(z) = ω^i(z^n−1) / n(z−ω^i)
 
     // 1. pEval_i = n(xi-w^i) mod q
@@ -261,14 +326,15 @@ impl Proof {
     let mut i = 0;
     let mut w = 1;
     // Step 1.
-    while i < nPublic.as_u64() {
-        let temp = xi - w;
-        pEval[i] = temp.mulmodu32(n);
+    while i < <%=Math.max(nPublic, 1)%> {
+        let temp = xi.submod(w);
+        pEval[i] = temp.mulmod(n.as_u256());
         w = w.mulmod(w1);
         i = i + 1;
     }
 
-    // TODO Step 2: invert all entries of pEval
+    // Step 2: invert all entries of pEval
+    Proof::inverse_array(pEval);
 
     // Step 3
     let power = <%=power%>;
@@ -282,12 +348,10 @@ impl Proof {
 
         i = i + 1;
     }
-    let num: u256 = xi_pow_n - 1;
-    w = 1;
+    let num: u256 = xi_pow_n.submod(1);
     i = 0;
-    while i < nPublic.as_u64() {
-        pEval[i] = w.mulmod(pEval[i]).mulmod(xi_pow_n);
-        w = w.mulmod(w1);
+    while i < <%=Math.max(nPublic, 1)%> {
+        pEval[i] = pEval[i].mulmod(num);
         i = i + 1;
     }
 
@@ -296,7 +360,7 @@ impl Proof {
   }
 
   // SUM(w_i*L_i(xi)) 
-  fn calculatePI(self, pEval: [u256; <%=nPublic%>], publicInput: [u256; <%=nPublic%>]) -> u256 {
+  fn calculatePI(self, pEval: [u256; <%=Math.max(nPublic, 1)%>], publicInput: [u256; <%=nPublic%>]) -> u256 {
       let mut res: u256 = 0;
       let mut temp: u256 = 0;
       let mut i = 0;
@@ -314,7 +378,7 @@ impl Proof {
       }
 
       // Same as in Solidity code, negate PI
-      return q - res;
+      return q.submod(res);
   }
 
   // r0 := PI(z) − L1(z)α2 − α(¯a + β¯sσ1 + γ)(¯b + β¯sσ2 + γ)(¯c + γ)¯zω,
@@ -691,9 +755,7 @@ impl Proof {
       let u = u256::from(challenges[5]);
 
       // Step 5&6: compute w(z^n-1)/n*(z-w)
-      let mut pEval: [u256; <%=nPublic%>] = [0;<%=nPublic%>];
-      // TODO pEval has to be updated by calculateLagrange
-      // TODO add inversion in calculateLagrange to finalize computation
+      let mut pEval: [u256; <%=Math.max(nPublic, 1)%>] = [0;<%=Math.max(nPublic, 1)%>];
       let xi_pow_n = self.calculateLagrange(xi, pEval);
 
       // Step 7: compute PI (public input polynomial evaluation)
