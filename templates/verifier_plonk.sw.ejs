@@ -92,6 +92,40 @@ struct Proof {
   pub eval_zw: u256,
 }
 
+impl u256 {
+  fn addmod(self, other: u256) -> u256 {
+      let mut res: u256 = 0;
+      asm (rA: res, rB: self, rC: other, rD: q) {
+      wqam rA rB rC rD;
+      };
+      res
+  }
+
+  fn mulmod(self, other: u256) -> u256 {
+      let mut res: u256 = 0;
+      asm (rA: res, rB: self, rC: other, rD: q) {
+      wqmm rA rB rC rD;
+      }
+      res
+  }
+
+  fn mulmod(self, other: u32) -> u256 {
+      let mut res: u256 = 0;
+      asm (rA: res, rB: self, rC: other, rD: q) {
+      wqmm rA rB rC rD;
+      }
+      res
+  }
+
+  fn submod(self, other: u256) -> u256 {
+      let mut res: u256 = q - other;
+      asm (rA: res, rB: self, rD: q) {
+      wqam rA rB rA rD;
+      }
+      res
+  }
+}
+
 impl Proof {
 
   // beta, gamma, alpha, xi (=zeta), v, u
@@ -209,22 +243,28 @@ impl Proof {
       return [beta, gamma, alpha, xi, v, u]
   }
 
-  // TODO return more pEval_i , where i=0..nPublic
-  // and pEval_i = wi^i * (pXi-wi^i)
-  // TODO calculate inverse to finish up the value
-  // num, denom, xi^n
-  fn calculateLagrange(self, xi: u256, w: u256) -> (u256, u256, u256) {
-    // n(xi-w) mod q
-    let mut denom: u256 = 0;
-    let temp = xi - w;
-    // mem[$rA,32] = (b*c)%d
-    asm (rA: denom, rB: temp, rC: n, rD: q) {
-      wqmm rA rB rC rD;
-    };
-    
-    // 2. xi^n-w, where in practice n is a power of 2
-    let power = <%=power%>;
+  // TODO calculate inverses
+  fn calculateLagrange(self, xi: u256, ref mut pEval: [u256; <%=nPublic%>]) -> (u256, u256, u256) {
+    // We want for i=0..nPublic: Li(z) = ω^i(z^n−1) / n(z−ω^i)
+
+    // 1. pEval_i = n(xi-w^i) mod q
+    // 2. then all pEval_i get inverted => 1/ n(xi-w^i)
+    // 3. finally multiply the numerator ending up with pEval_i = ω^i(z^n−1) / n(z−ω^i)
     let mut i = 0;
+    let mut w = 1;
+    // Step 1.
+    while i < nPublic {
+        let temp = xi - w;
+        pEval[i] = temp.mulmod(n);
+        w = w.mulmod(w1);
+        i = i + 1;
+    }
+
+    // TODO Step 2: invert all entries of pEval
+
+    // Step 3
+    let power = <%=power%>;
+    i = 0;
     let mut xi_pow_n: u256 = xi;
     while i < power {
         // mem[$rA,32] = (b*c)%d
@@ -234,11 +274,17 @@ impl Proof {
 
         i = i + 1;
     }
-    let num: u256 = xi_pow_n - w;
+    let num: u256 = xi_pow_n - 1;
+    w = 1;
+    i = 0;
+    while i < nPublic {
+        pEval[i] = w.mulmod(pEval[i]).mulmod(xi_pow_n);
+        w = w.mulmod(w1);
+        i = i + 1;
+    }
 
-    // TODO invert denom
-    // return (xiˆn-w) / n*(xi-w), xi_pow_n
-    return (num, denom, xi_pow_n);
+    // return xi_pow_n for further usage, pEval has been modified in place
+    return xi_pow_n;
   }
 
   // SUM(w_i*L_i(xi)) 
@@ -637,11 +683,10 @@ impl Proof {
       let u = u256::from(challenges[5]);
 
       // Step 5&6: compute w(z^n-1)/n*(z-w)
-      let w: u256 = 1;
       let mut pEval: [u256; <%=nPublic%>] = [0u256;<%=nPublic%>];
       // TODO pEval has to be updated by calculateLagrange
-      // TODO inversion in calculateLagrange to finalize computation
-      let (num, denom, xi_pow_n) = self.calculateLagrange(xi, w);
+      // TODO add inversion in calculateLagrange to finalize computation
+      let xi_pow_n = self.calculateLagrange(xi);
 
       // Step 7: compute PI (public input polynomial evaluation)
       // sum(w_i*L_i(xi)) 
