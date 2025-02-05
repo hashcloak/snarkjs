@@ -5599,10 +5599,9 @@ async function exportSwayVerifier(zKeyName, templates, logger) {
 
     const verificationKey = await zkeyExportVerificationKey(zKeyName, logger);
 
-    //TODO - fflonkSway
-    // if ("fflonk" === verificationKey.protocol) {
-    //     return fflonkExportSolidityVerifierCmd(verificationKey, templates, logger);
-    // }
+    if ("fflonk" === verificationKey.protocol) {
+        return fflonkExportSolidityVerifier(verificationKey, templates, logger);
+    }
 
     let template = templates[verificationKey.protocol];
 
