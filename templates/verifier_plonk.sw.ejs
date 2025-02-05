@@ -20,6 +20,13 @@ along with snarkJS. If not, see
 */
 
 contract;
+// TODO clear this import
+use lib::{G1Point, G2Point, on_bn128_curve};
+use std::hash::Hash;
+use std::hash::{keccak256, sha256};
+use std::bytes::Bytes;
+use std::bytes_conversions::u256::*;
+const ZERO: u256 = 0;
 
 // Omega
 const w1: u256 = <%='0x' + BigInt(w).toString(16) + 'u256' ;%>;
@@ -31,6 +38,7 @@ const qf: u256 = 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cf
 // [1]_1
 const G1x: u256 = 0x1u256;
 const G1y: u256 = 0x2u256;
+const G1: G1Point = G1Point {x: G1x, y: G1y };
 // [1]_2
 const G2x1: u256 = 0x1800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6edu256;
 const G2x2: u256 = 0x198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c2u256;
@@ -109,7 +117,7 @@ impl u256 {
       res
   }
 
-  fn mulmod(self, other: u32) -> u256 {
+  fn mulmodu32(self, other: u32) -> u256 {
       let mut res: u256 = 0;
       asm (rA: res, rB: self, rC: other, rD: q) {
       wqmm rA rB rC rD;
@@ -244,7 +252,7 @@ impl Proof {
   }
 
   // TODO calculate inverses
-  fn calculateLagrange(self, xi: u256, ref mut pEval: [u256; <%=nPublic%>]) -> (u256, u256, u256) {
+  fn calculateLagrange(self, xi: u256, ref mut pEval: [u256; <%=nPublic%>]) -> u256 {
     // We want for i=0..nPublic: Li(z) = ω^i(z^n−1) / n(z−ω^i)
 
     // 1. pEval_i = n(xi-w^i) mod q
@@ -253,9 +261,9 @@ impl Proof {
     let mut i = 0;
     let mut w = 1;
     // Step 1.
-    while i < nPublic {
+    while i < nPublic.as_u64() {
         let temp = xi - w;
-        pEval[i] = temp.mulmod(n);
+        pEval[i] = temp.mulmodu32(n);
         w = w.mulmod(w1);
         i = i + 1;
     }
@@ -277,7 +285,7 @@ impl Proof {
     let num: u256 = xi_pow_n - 1;
     w = 1;
     i = 0;
-    while i < nPublic {
+    while i < nPublic.as_u64() {
         pEval[i] = w.mulmod(pEval[i]).mulmod(xi_pow_n);
         w = w.mulmod(w1);
         i = i + 1;
@@ -292,7 +300,7 @@ impl Proof {
       let mut res: u256 = 0;
       let mut temp: u256 = 0;
       let mut i = 0;
-      while i < nPublic {
+      while i < nPublic.as_u64() {
         // temp = pEval[i]*publicInput[i] mod q
         asm (rA: temp, rB: pEval[i], rC: publicInput[i], rD: q) {
           wqmm rA rB rC rD;
@@ -683,10 +691,10 @@ impl Proof {
       let u = u256::from(challenges[5]);
 
       // Step 5&6: compute w(z^n-1)/n*(z-w)
-      let mut pEval: [u256; <%=nPublic%>] = [0u256;<%=nPublic%>];
+      let mut pEval: [u256; <%=nPublic%>] = [0;<%=nPublic%>];
       // TODO pEval has to be updated by calculateLagrange
       // TODO add inversion in calculateLagrange to finalize computation
-      let xi_pow_n = self.calculateLagrange(xi);
+      let xi_pow_n = self.calculateLagrange(xi, pEval);
 
       // Step 7: compute PI (public input polynomial evaluation)
       // sum(w_i*L_i(xi)) 
@@ -701,7 +709,7 @@ impl Proof {
       };
       let R0 = self.calculateR0(
         PI, 
-        pEval[0], // TODO verify this
+        pEval[0],
         alpha,
         alpha_squared,
         beta,
@@ -710,7 +718,7 @@ impl Proof {
       
       // Step 9: compute D
       let D = self.calculateD(
-        pEval[0], // TODO verify this
+        pEval[0],
         alpha,
         alpha_squared,
         beta,
