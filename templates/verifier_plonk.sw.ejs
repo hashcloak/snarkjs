@@ -518,8 +518,10 @@ impl Proof {
     }
     let num: u256 = xi_pow_n.submod(1);
     i = 0;
+    w = 1;
     while i < <%=Math.max(nPublic, 1)%> {
-        pEval[i] = pEval[i].mulmod(num);
+        pEval[i] = w.mulmod(pEval[i]).mulmod(num);
+        w = w.mulmod(w1);
         i = i + 1;
     }
 
