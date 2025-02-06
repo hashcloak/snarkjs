@@ -5393,7 +5393,7 @@ async function bellmanContribute(curve, challengeFilename, responseFileName, ent
     along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
 */
 
-const {stringifyBigInts: stringifyBigInts$5} = ffjavascript.utils;
+const {stringifyBigInts: stringifyBigInts$6} = ffjavascript.utils;
 
 async function zkeyExportVerificationKey(zkeyName, logger) {
     if (logger) logger.info("EXPORT VERIFICATION KEY STARTED");
@@ -5453,7 +5453,7 @@ async function groth16Vk(zkey, fd, sections) {
     }
     await binFileUtils__namespace.endReadSection(fd);
 
-    vKey = stringifyBigInts$5(vKey);
+    vKey = stringifyBigInts$6(vKey);
 
     return vKey;
 }
@@ -5485,7 +5485,7 @@ async function plonkVk(zkey) {
         w: curve.Fr.toObject(curve.Fr.w[zkey.power])
     };
 
-    vKey = stringifyBigInts$5(vKey);
+    vKey = stringifyBigInts$6(vKey);
 
     return vKey;
 }
@@ -5514,7 +5514,7 @@ async function exportFFlonkVk(zkey, logger) {
         C0: curve.G1.toObject(zkey.C0),
     };
 
-    return stringifyBigInts$5(vKey);
+    return stringifyBigInts$6(vKey);
 }
 
 /*
@@ -5536,7 +5536,7 @@ async function exportFFlonkVk(zkey, logger) {
     along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
 */
 
-const {unstringifyBigInts: unstringifyBigInts$b, stringifyBigInts: stringifyBigInts$4} = ffjavascript.utils;
+const {unstringifyBigInts: unstringifyBigInts$c, stringifyBigInts: stringifyBigInts$5} = ffjavascript.utils;
 
 async function fflonkExportSolidityVerifier(vk, templates, logger) {
     if (logger) logger.info("FFLONK EXPORT SOLIDITY VERIFIER STARTED");
@@ -5566,13 +5566,13 @@ async function fflonkExportSolidityVerifier(vk, templates, logger) {
     return ejs__default["default"].render(template, vk);
 
     function fromVkey(str) {
-        const val = unstringifyBigInts$b(str);
+        const val = unstringifyBigInts$c(str);
         return curve.Fr.fromObject(val);
     }
 
     function toVkey(val) {
         const str = curve.Fr.toObject(val);
-        return stringifyBigInts$4(str);
+        return stringifyBigInts$5(str);
     }
 }
 
@@ -5592,6 +5592,65 @@ async function exportSolidityVerifier(zKeyName, templates, logger) {
     return ejs__default["default"].render(template, verificationKey);
 }
 
+/*
+    Copyright 2021 0KIMS association.
+
+    This file is part of snarkJS.
+
+    snarkJS is a free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    snarkJS is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+    or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
+    License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
+*/
+
+const {unstringifyBigInts: unstringifyBigInts$b, stringifyBigInts: stringifyBigInts$4} = ffjavascript.utils;
+
+async function fflonkExportSwayVerifier(vk, templates, logger) {
+    if (logger) logger.info("FFLONK EXPORT SWAY VERIFIER STARTED");
+
+    const curve = await getCurveFromName(vk.curve);
+
+    // Precompute w3_2, w4_2 and w4_3
+    let w3 = fromVkey(vk.w3);
+    vk.w3_2 = toVkey(curve.Fr.square(w3));
+
+    let w4 = fromVkey(vk.w4);
+    vk.w4_2 = toVkey(curve.Fr.square(w4));
+    vk.w4_3 = toVkey(curve.Fr.mul(curve.Fr.square(w4), w4));
+
+    let w8 = fromVkey(vk.w8);
+    let acc = curve.Fr.one;
+
+    for (let i = 1; i < 8; i++) {
+        acc = curve.Fr.mul(acc, w8);
+        vk["w8_" + i] = toVkey(acc);
+    }
+
+    let template = templates[vk.protocol];
+
+    if (logger) logger.info("FFLONK EXPORT SWAY VERIFIER FINISHED");
+
+    return ejs__default["default"].render(template, vk);
+
+    function fromVkey(str) {
+        const val = unstringifyBigInts$b(str);
+        return curve.Fr.fromObject(val);
+    }
+
+    function toVkey(val) {
+        const str = curve.Fr.toObject(val);
+        return stringifyBigInts$4(str);
+    }
+}
+
 // Not ready yet
 // module.exports.generateVerifier_kimleeoh = generateVerifier_kimleeoh;
 
@@ -5600,7 +5659,7 @@ async function exportSwayVerifier(zKeyName, templates, logger) {
     const verificationKey = await zkeyExportVerificationKey(zKeyName, logger);
 
     if ("fflonk" === verificationKey.protocol) {
-        return fflonkExportSolidityVerifier(verificationKey, templates, logger);
+        return fflonkExportSwayVerifier(verificationKey, templates, logger);
     }
 
     let template = templates[verificationKey.protocol];

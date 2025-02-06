@@ -888,7 +888,7 @@ async function read(fileName) {
     You should have received a copy of the GNU General Public License
     along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
 */
-const {stringifyBigInts: stringifyBigInts$4} = ffjavascript.utils;
+const {stringifyBigInts: stringifyBigInts$5} = ffjavascript.utils;
 
 async function groth16Prove(zkeyFileName, witnessFileName, logger, options) {
     const {fd: fdWtns, sections: sectionsWtns} = await binFileUtils__namespace.readBinFile(witnessFileName, "wtns", 2, 1<<25, 1<<23);
@@ -1002,8 +1002,8 @@ async function groth16Prove(zkeyFileName, witnessFileName, logger, options) {
     await fdZKey.close();
     await fdWtns.close();
 
-    proof = stringifyBigInts$4(proof);
-    publicSignals = stringifyBigInts$4(publicSignals);
+    proof = stringifyBigInts$5(proof);
+    publicSignals = stringifyBigInts$5(publicSignals);
 
     return {proof, publicSignals};
 }
@@ -1256,10 +1256,10 @@ async function joinABC(curve, zkey, a, b, c, logger) {
     You should have received a copy of the GNU General Public License
     along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
 */
-const { unstringifyBigInts: unstringifyBigInts$b} = ffjavascript.utils;
+const { unstringifyBigInts: unstringifyBigInts$c} = ffjavascript.utils;
 
 async function wtnsCalculate(_input, wasmFileName, wtnsFileName, options) {
-    const input = unstringifyBigInts$b(_input);
+    const input = unstringifyBigInts$c(_input);
 
     const fdWasm = await fastFile__namespace.readExisting(wasmFileName);
     const wasm = await fdWasm.read(fdWasm.totalSize);
@@ -1301,10 +1301,10 @@ async function wtnsCalculate(_input, wasmFileName, wtnsFileName, options) {
     You should have received a copy of the GNU General Public License
     along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
 */
-const {unstringifyBigInts: unstringifyBigInts$a} = ffjavascript.utils;
+const {unstringifyBigInts: unstringifyBigInts$b} = ffjavascript.utils;
 
 async function groth16FullProve(_input, wasmFile, zkeyFileName, logger, wtnsCalcOptions, proverOptions) {
-    const input = unstringifyBigInts$a(_input);
+    const input = unstringifyBigInts$b(_input);
 
     const wtns= {
         type: "mem"
@@ -1331,7 +1331,7 @@ async function groth16FullProve(_input, wasmFile, zkeyFileName, logger, wtnsCalc
     You should have received a copy of the GNU General Public License along with
     snarkjs. If not, see <https://www.gnu.org/licenses/>.
 */
-const {unstringifyBigInts: unstringifyBigInts$9} = ffjavascript.utils;
+const {unstringifyBigInts: unstringifyBigInts$a} = ffjavascript.utils;
 
 async function groth16Verify(_vk_verifier, _publicSignals, _proof, logger) {
 /*
@@ -1341,9 +1341,9 @@ async function groth16Verify(_vk_verifier, _publicSignals, _proof, logger) {
     }
 */
 
-    const vk_verifier = unstringifyBigInts$9(_vk_verifier);
-    const proof = unstringifyBigInts$9(_proof);
-    const publicSignals = unstringifyBigInts$9(_publicSignals);
+    const vk_verifier = unstringifyBigInts$a(_vk_verifier);
+    const proof = unstringifyBigInts$a(_proof);
+    const publicSignals = unstringifyBigInts$a(_publicSignals);
 
     const curve = await getCurveFromName(vk_verifier.curve);
 
@@ -1432,7 +1432,7 @@ function publicInputsAreValid$1(curve, publicInputs) {
     You should have received a copy of the GNU General Public License
     along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
 */
-const { unstringifyBigInts: unstringifyBigInts$8} = ffjavascript.utils;
+const { unstringifyBigInts: unstringifyBigInts$9} = ffjavascript.utils;
 
 function p256$2(n) {
     let nstr = n.toString(16);
@@ -1442,8 +1442,8 @@ function p256$2(n) {
 }
 
 async function groth16ExportSolidityCallData(_proof, _pub) {
-    const proof = unstringifyBigInts$8(_proof);
-    const pub = unstringifyBigInts$8(_pub);
+    const proof = unstringifyBigInts$9(_proof);
+    const pub = unstringifyBigInts$9(_pub);
 
     let inputs = "";
     for (let i=0; i<pub.length; i++) {
@@ -4010,12 +4010,12 @@ async function loadSymbols(symFileName) {
     You should have received a copy of the GNU General Public License
     along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
 */
-const {unstringifyBigInts: unstringifyBigInts$7} = ffjavascript.utils;
+const {unstringifyBigInts: unstringifyBigInts$8} = ffjavascript.utils;
 
 
 async function wtnsDebug(_input, wasmFileName, wtnsFileName, symName, options, logger) {
 
-    const input = unstringifyBigInts$7(_input);
+    const input = unstringifyBigInts$8(_input);
 
     const fdWasm = await fastFile__namespace.readExisting(wasmFileName);
     const wasm = await fdWasm.read(fdWasm.totalSize);
@@ -6144,7 +6144,7 @@ async function bellmanContribute(curve, challengeFilename, responseFileName, ent
     along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
 */
 
-const {stringifyBigInts: stringifyBigInts$3} = ffjavascript.utils;
+const {stringifyBigInts: stringifyBigInts$4} = ffjavascript.utils;
 
 async function zkeyExportVerificationKey(zkeyName, logger) {
     if (logger) logger.info("EXPORT VERIFICATION KEY STARTED");
@@ -6204,7 +6204,7 @@ async function groth16Vk(zkey, fd, sections) {
     }
     await binFileUtils__namespace.endReadSection(fd);
 
-    vKey = stringifyBigInts$3(vKey);
+    vKey = stringifyBigInts$4(vKey);
 
     return vKey;
 }
@@ -6236,7 +6236,7 @@ async function plonkVk(zkey) {
         w: curve.Fr.toObject(curve.Fr.w[zkey.power])
     };
 
-    vKey = stringifyBigInts$3(vKey);
+    vKey = stringifyBigInts$4(vKey);
 
     return vKey;
 }
@@ -6265,7 +6265,7 @@ async function exportFFlonkVk(zkey, logger) {
         C0: curve.G1.toObject(zkey.C0),
     };
 
-    return stringifyBigInts$3(vKey);
+    return stringifyBigInts$4(vKey);
 }
 
 /*
@@ -6287,7 +6287,7 @@ async function exportFFlonkVk(zkey, logger) {
     along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
 */
 
-const {unstringifyBigInts: unstringifyBigInts$6, stringifyBigInts: stringifyBigInts$2} = ffjavascript.utils;
+const {unstringifyBigInts: unstringifyBigInts$7, stringifyBigInts: stringifyBigInts$3} = ffjavascript.utils;
 
 async function fflonkExportSolidityVerifier(vk, templates, logger) {
     if (logger) logger.info("FFLONK EXPORT SOLIDITY VERIFIER STARTED");
@@ -6317,13 +6317,13 @@ async function fflonkExportSolidityVerifier(vk, templates, logger) {
     return ejs__default["default"].render(template, vk);
 
     function fromVkey(str) {
-        const val = unstringifyBigInts$6(str);
+        const val = unstringifyBigInts$7(str);
         return curve.Fr.fromObject(val);
     }
 
     function toVkey(val) {
         const str = curve.Fr.toObject(val);
-        return stringifyBigInts$2(str);
+        return stringifyBigInts$3(str);
     }
 }
 
@@ -6343,6 +6343,65 @@ async function exportSolidityVerifier(zKeyName, templates, logger) {
     return ejs__default["default"].render(template, verificationKey);
 }
 
+/*
+    Copyright 2021 0KIMS association.
+
+    This file is part of snarkJS.
+
+    snarkJS is a free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    snarkJS is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+    or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
+    License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
+*/
+
+const {unstringifyBigInts: unstringifyBigInts$6, stringifyBigInts: stringifyBigInts$2} = ffjavascript.utils;
+
+async function fflonkExportSwayVerifier(vk, templates, logger) {
+    if (logger) logger.info("FFLONK EXPORT SWAY VERIFIER STARTED");
+
+    const curve = await getCurveFromName(vk.curve);
+
+    // Precompute w3_2, w4_2 and w4_3
+    let w3 = fromVkey(vk.w3);
+    vk.w3_2 = toVkey(curve.Fr.square(w3));
+
+    let w4 = fromVkey(vk.w4);
+    vk.w4_2 = toVkey(curve.Fr.square(w4));
+    vk.w4_3 = toVkey(curve.Fr.mul(curve.Fr.square(w4), w4));
+
+    let w8 = fromVkey(vk.w8);
+    let acc = curve.Fr.one;
+
+    for (let i = 1; i < 8; i++) {
+        acc = curve.Fr.mul(acc, w8);
+        vk["w8_" + i] = toVkey(acc);
+    }
+
+    let template = templates[vk.protocol];
+
+    if (logger) logger.info("FFLONK EXPORT SWAY VERIFIER FINISHED");
+
+    return ejs__default["default"].render(template, vk);
+
+    function fromVkey(str) {
+        const val = unstringifyBigInts$6(str);
+        return curve.Fr.fromObject(val);
+    }
+
+    function toVkey(val) {
+        const str = curve.Fr.toObject(val);
+        return stringifyBigInts$2(str);
+    }
+}
+
 // Not ready yet
 // module.exports.generateVerifier_kimleeoh = generateVerifier_kimleeoh;
 
@@ -6351,7 +6410,7 @@ async function exportSwayVerifier(zKeyName, templates, logger) {
     const verificationKey = await zkeyExportVerificationKey(zKeyName, logger);
 
     if ("fflonk" === verificationKey.protocol) {
-        return fflonkExportSolidityVerifier(verificationKey, templates, logger);
+        return fflonkExportSwayVerifier(verificationKey, templates, logger);
     }
 
     let template = templates[verificationKey.protocol];
