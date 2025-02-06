@@ -263,7 +263,7 @@ const commands = [
         cmd: "zkey export swaycalldata [public.json] [proof.json]",
         description: "Generates sway call parameters ready to be called.",
         alias: ["zkeswc", "generateswaycall -pub|public -p|proof"],
-        //action: zkeyExportSwayCalldata
+        action: zkeyExportSwayCalldata
     },
     {
         cmd: "groth16 setup [circuit.r1cs] [powersoftau.ptau] [circuit_0000.zkey]",
@@ -737,6 +737,38 @@ async function zkeyExportSwayVerifier(params, options) {
     fs.writeFileSync(verifierName, verifierCode, "utf-8");
 
     return 0;
+}
+
+async function zkeyExportSwayCalldata(params, options) {
+  let publicName;
+  let proofName;
+
+  if (params.length < 1) {
+      publicName = "public.json";
+  } else {
+      publicName = params[0];
+  }
+
+  if (params.length < 2) {
+      proofName = "proof.json";
+  } else {
+      proofName = params[1];
+  }
+
+  if (options.verbose) Logger.setLogLevel("DEBUG");
+
+  const pub = JSON.parse(fs.readFileSync(publicName, "utf8"));
+  const proof = JSON.parse(fs.readFileSync(proofName, "utf8"));
+
+  let res;
+  if (proof.protocol == "plonk") {
+      res = await plonk.exportSwayCalldata(proof, pub);
+  } else {
+      throw new Error("Invalid Protocol");
+  }
+  console.log(res);
+
+  return 0;
 }
 
 // powersoftau new <curve> <power> [powersoftau_0000.ptau]",

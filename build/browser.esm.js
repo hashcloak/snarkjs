@@ -3941,10 +3941,10 @@ class WitnessCalculatorCircom2 {
     You should have received a copy of the GNU General Public License
     along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
 */
-const { unstringifyBigInts: unstringifyBigInts$c} = utils;
+const { unstringifyBigInts: unstringifyBigInts$d} = utils;
 
 async function wtnsCalculate(_input, wasmFileName, wtnsFileName, options) {
-    const input = unstringifyBigInts$c(_input);
+    const input = unstringifyBigInts$d(_input);
 
     const fdWasm = await readExisting(wasmFileName);
     const wasm = await fdWasm.read(fdWasm.totalSize);
@@ -3986,10 +3986,10 @@ async function wtnsCalculate(_input, wasmFileName, wtnsFileName, options) {
     You should have received a copy of the GNU General Public License
     along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
 */
-const {unstringifyBigInts: unstringifyBigInts$b} = utils;
+const {unstringifyBigInts: unstringifyBigInts$c} = utils;
 
 async function groth16FullProve(_input, wasmFile, zkeyFileName, logger, wtnsCalcOptions, proverOptions) {
-    const input = unstringifyBigInts$b(_input);
+    const input = unstringifyBigInts$c(_input);
 
     const wtns= {
         type: "mem"
@@ -4016,7 +4016,7 @@ async function groth16FullProve(_input, wasmFile, zkeyFileName, logger, wtnsCalc
     You should have received a copy of the GNU General Public License along with
     snarkjs. If not, see <https://www.gnu.org/licenses/>.
 */
-const {unstringifyBigInts: unstringifyBigInts$a} = utils;
+const {unstringifyBigInts: unstringifyBigInts$b} = utils;
 
 async function groth16Verify(_vk_verifier, _publicSignals, _proof, logger) {
 /*
@@ -4026,9 +4026,9 @@ async function groth16Verify(_vk_verifier, _publicSignals, _proof, logger) {
     }
 */
 
-    const vk_verifier = unstringifyBigInts$a(_vk_verifier);
-    const proof = unstringifyBigInts$a(_proof);
-    const publicSignals = unstringifyBigInts$a(_publicSignals);
+    const vk_verifier = unstringifyBigInts$b(_vk_verifier);
+    const proof = unstringifyBigInts$b(_proof);
+    const publicSignals = unstringifyBigInts$b(_publicSignals);
 
     const curve = await getCurveFromName(vk_verifier.curve);
 
@@ -4117,9 +4117,9 @@ function publicInputsAreValid$1(curve, publicInputs) {
     You should have received a copy of the GNU General Public License
     along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
 */
-const { unstringifyBigInts: unstringifyBigInts$9} = utils;
+const { unstringifyBigInts: unstringifyBigInts$a} = utils;
 
-function p256$2(n) {
+function p256$3(n) {
     let nstr = n.toString(16);
     while (nstr.length < 64) nstr = "0"+nstr;
     nstr = `"0x${nstr}"`;
@@ -4127,19 +4127,19 @@ function p256$2(n) {
 }
 
 async function groth16ExportSolidityCallData(_proof, _pub) {
-    const proof = unstringifyBigInts$9(_proof);
-    const pub = unstringifyBigInts$9(_pub);
+    const proof = unstringifyBigInts$a(_proof);
+    const pub = unstringifyBigInts$a(_pub);
 
     let inputs = "";
     for (let i=0; i<pub.length; i++) {
         if (inputs != "") inputs = inputs + ",";
-        inputs = inputs + p256$2(pub[i]);
+        inputs = inputs + p256$3(pub[i]);
     }
 
     let S;
-    S=`[${p256$2(proof.pi_a[0])}, ${p256$2(proof.pi_a[1])}],` +
-        `[[${p256$2(proof.pi_b[0][1])}, ${p256$2(proof.pi_b[0][0])}],[${p256$2(proof.pi_b[1][1])}, ${p256$2(proof.pi_b[1][0])}]],` +
-        `[${p256$2(proof.pi_c[0])}, ${p256$2(proof.pi_c[1])}],` +
+    S=`[${p256$3(proof.pi_a[0])}, ${p256$3(proof.pi_a[1])}],` +
+        `[[${p256$3(proof.pi_b[0][1])}, ${p256$3(proof.pi_b[0][0])}],[${p256$3(proof.pi_b[1][1])}, ${p256$3(proof.pi_b[1][0])}]],` +
+        `[${p256$3(proof.pi_c[0])}, ${p256$3(proof.pi_c[1])}],` +
         `[${inputs}]`;
 
     return S;
@@ -7045,12 +7045,12 @@ async function loadSymbols(symFileName) {
     You should have received a copy of the GNU General Public License
     along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
 */
-const {unstringifyBigInts: unstringifyBigInts$8} = utils;
+const {unstringifyBigInts: unstringifyBigInts$9} = utils;
 
 
 async function wtnsDebug(_input, wasmFileName, wtnsFileName, symName, options, logger) {
 
-    const input = unstringifyBigInts$8(_input);
+    const input = unstringifyBigInts$9(_input);
 
     const fdWasm = await readExisting(wasmFileName);
     const wasm = await fdWasm.read(fdWasm.totalSize);
@@ -9326,7 +9326,7 @@ var ejs = {};
     along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
 */
 
-const {unstringifyBigInts: unstringifyBigInts$7, stringifyBigInts: stringifyBigInts$3} = utils;
+const {unstringifyBigInts: unstringifyBigInts$8, stringifyBigInts: stringifyBigInts$3} = utils;
 
 async function fflonkExportSolidityVerifier(vk, templates, logger) {
     if (logger) logger.info("FFLONK EXPORT SOLIDITY VERIFIER STARTED");
@@ -9356,7 +9356,7 @@ async function fflonkExportSolidityVerifier(vk, templates, logger) {
     return ejs.render(template, vk);
 
     function fromVkey(str) {
-        const val = unstringifyBigInts$7(str);
+        const val = unstringifyBigInts$8(str);
         return curve.Fr.fromObject(val);
     }
 
@@ -9401,7 +9401,7 @@ async function exportSolidityVerifier(zKeyName, templates, logger) {
     along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
 */
 
-const {unstringifyBigInts: unstringifyBigInts$6, stringifyBigInts: stringifyBigInts$2} = utils;
+const {unstringifyBigInts: unstringifyBigInts$7, stringifyBigInts: stringifyBigInts$2} = utils;
 
 async function fflonkExportSwayVerifier(vk, templates, logger) {
     if (logger) logger.info("FFLONK EXPORT SWAY VERIFIER STARTED");
@@ -9431,7 +9431,7 @@ async function fflonkExportSwayVerifier(vk, templates, logger) {
     return ejs.render(template, vk);
 
     function fromVkey(str) {
-        const val = unstringifyBigInts$6(str);
+        const val = unstringifyBigInts$7(str);
         return curve.Fr.fromObject(val);
     }
 
@@ -12885,10 +12885,10 @@ async function plonk16Prove(zkeyFileName, witnessFileName, logger, options) {
     You should have received a copy of the GNU General Public License
     along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
 */
-const {unstringifyBigInts: unstringifyBigInts$5} = utils;
+const {unstringifyBigInts: unstringifyBigInts$6} = utils;
 
 async function plonkFullProve(_input, wasmFile, zkeyFileName, logger, wtnsCalcOptions, proverOptions) {
-    const input = unstringifyBigInts$5(_input);
+    const input = unstringifyBigInts$6(_input);
 
     const wtns= {
         type: "mem"
@@ -12915,14 +12915,14 @@ async function plonkFullProve(_input, wasmFile, zkeyFileName, logger, wtnsCalcOp
     You should have received a copy of the GNU General Public License along with
     snarkjs. If not, see <https://www.gnu.org/licenses/>.
 */
-const {unstringifyBigInts: unstringifyBigInts$4} = utils;
+const {unstringifyBigInts: unstringifyBigInts$5} = utils;
 
 
 
 async function plonkVerify(_vk_verifier, _publicSignals, _proof, logger) {
-    let vk_verifier = unstringifyBigInts$4(_vk_verifier);
-    _proof = unstringifyBigInts$4(_proof);
-    let publicSignals = unstringifyBigInts$4(_publicSignals);
+    let vk_verifier = unstringifyBigInts$5(_vk_verifier);
+    _proof = unstringifyBigInts$5(_proof);
+    let publicSignals = unstringifyBigInts$5(_publicSignals);
 
     const curve = await getCurveFromName(vk_verifier.curve);
 
@@ -13295,9 +13295,9 @@ async function isValidPairing$1(curve, proof, challenges, vk, E, F) {
     You should have received a copy of the GNU General Public License
     along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
 */
-const { unstringifyBigInts: unstringifyBigInts$3} = utils;
+const { unstringifyBigInts: unstringifyBigInts$4} = utils;
 
-function p256$1(n) {
+function p256$2(n) {
     let nstr = n.toString(16);
     while (nstr.length < 64) nstr = "0"+nstr;
     nstr = `"0x${nstr}"`;
@@ -13305,33 +13305,125 @@ function p256$1(n) {
 }
 
 async function plonkExportSolidityCallData(_proof, _pub) {
-    const proof = unstringifyBigInts$3(_proof);
-    const pub = unstringifyBigInts$3(_pub);
+    const proof = unstringifyBigInts$4(_proof);
+    const pub = unstringifyBigInts$4(_pub);
 
     await getCurveFromName(proof.curve);
 
     let inputs = "";
     for (let i=0; i<pub.length; i++) {
         if (inputs != "") inputs = inputs + ",";
-        inputs = inputs + p256$1(pub[i]);
+        inputs = inputs + p256$2(pub[i]);
     }
 
-    return `[${p256$1(proof.A[0])}, ${p256$1(proof.A[1])},` +
-    `${p256$1(proof.B[0])},${p256$1(proof.B[1])},` +
-    `${p256$1(proof.C[0])},${p256$1(proof.C[1])},` +
-    `${p256$1(proof.Z[0])},${p256$1(proof.Z[1])},` +
-    `${p256$1(proof.T1[0])},${p256$1(proof.T1[1])},` +
-    `${p256$1(proof.T2[0])},${p256$1(proof.T2[1])},` +
-    `${p256$1(proof.T3[0])},${p256$1(proof.T3[1])},` +
-    `${p256$1(proof.Wxi[0])},${p256$1(proof.Wxi[1])},` +
-    `${p256$1(proof.Wxiw[0])},${p256$1(proof.Wxiw[1])},` +
-    `${p256$1(proof.eval_a)},` + 
-    `${p256$1(proof.eval_b)},` + 
-    `${p256$1(proof.eval_c)},` + 
-    `${p256$1(proof.eval_s1)},` + 
-    `${p256$1(proof.eval_s2)},` + 
-    `${p256$1(proof.eval_zw)}]` + 
+    return `[${p256$2(proof.A[0])}, ${p256$2(proof.A[1])},` +
+    `${p256$2(proof.B[0])},${p256$2(proof.B[1])},` +
+    `${p256$2(proof.C[0])},${p256$2(proof.C[1])},` +
+    `${p256$2(proof.Z[0])},${p256$2(proof.Z[1])},` +
+    `${p256$2(proof.T1[0])},${p256$2(proof.T1[1])},` +
+    `${p256$2(proof.T2[0])},${p256$2(proof.T2[1])},` +
+    `${p256$2(proof.T3[0])},${p256$2(proof.T3[1])},` +
+    `${p256$2(proof.Wxi[0])},${p256$2(proof.Wxi[1])},` +
+    `${p256$2(proof.Wxiw[0])},${p256$2(proof.Wxiw[1])},` +
+    `${p256$2(proof.eval_a)},` + 
+    `${p256$2(proof.eval_b)},` + 
+    `${p256$2(proof.eval_c)},` + 
+    `${p256$2(proof.eval_s1)},` + 
+    `${p256$2(proof.eval_s2)},` + 
+    `${p256$2(proof.eval_zw)}]` + 
     `[${inputs}]`;
+}
+
+/*
+    Copyright 2021 0KIMS association.
+
+    This file is part of snarkJS.
+
+    snarkJS is a free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    snarkJS is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+    or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
+    License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
+*/
+const { unstringifyBigInts: unstringifyBigInts$3 } = utils;
+
+async function formatDataForSwayTest(_proof, _pub) {
+  function formatG1Point(x, y) {
+    return `G1Point{
+      x: ${p256$1(x)}u256,
+      y: ${p256$1(y)}u256
+    }`;
+  }
+
+  function formatScalar(value) {
+    return `${p256$1(value)}u256`;
+  }
+
+  const proof = unstringifyBigInts$3(_proof);
+  const pub = unstringifyBigInts$3(_pub);
+
+  let publicInputs = pub.map(value => `${p256$1(value)}u256`).join(", ");
+
+  return `fn get_test_proof() -> Proof {
+    let proof_A = ${formatG1Point(proof.A[0], proof.A[1])};
+    let proof_B = ${formatG1Point(proof.B[0], proof.B[1])};
+    let proof_C = ${formatG1Point(proof.C[0], proof.C[1])};
+    let proof_Z = ${formatG1Point(proof.Z[0], proof.Z[1])};
+    let proof_T1 = ${formatG1Point(proof.T1[0], proof.T1[1])};
+    let proof_T2 = ${formatG1Point(proof.T2[0], proof.T2[1])};
+    let proof_T3 = ${formatG1Point(proof.T3[0], proof.T3[1])};
+    let proof_Wxi = ${formatG1Point(proof.Wxi[0], proof.Wxi[1])};
+    let proof_Wxiw = ${formatG1Point(proof.Wxiw[0], proof.Wxiw[1])};
+
+    // Scalar values
+    let eval_a = ${formatScalar(proof.eval_a)};
+    let eval_b = ${formatScalar(proof.eval_b)};
+    let eval_c = ${formatScalar(proof.eval_c)};
+    let eval_s1 = ${formatScalar(proof.eval_s1)};
+    let eval_s2 = ${formatScalar(proof.eval_s2)};
+    let eval_zw = ${formatScalar(proof.eval_zw)};
+
+    let proof = Proof {
+      proof_A: proof_A,
+      proof_B: proof_B,
+      proof_C: proof_C,
+      proof_Z: proof_Z,
+      proof_T1: proof_T1,
+      proof_T2: proof_T2,
+      proof_T3: proof_T3,
+      proof_Wxi: proof_Wxi,
+      proof_Wxiw: proof_Wxiw,
+      eval_a: eval_a,
+      eval_b: eval_b,
+      eval_c: eval_c,
+      eval_s1: eval_s1,
+      eval_s2: eval_s2,
+      eval_zw: eval_zw,
+    };
+
+    return proof;
+  }
+
+  #[test]
+  fn test_verification() {
+      let proof = get_test_proof();
+      let publicInput: [u256; ${pub.length}] = [${publicInputs}];
+      assert(proof.verify(publicInput));
+  }`;
+}
+
+// **Fixed Function to Format Numbers as Hex**
+function p256$1(n) {
+  let nstr = n.toString(16);
+  while (nstr.length < 64) nstr = "0" + nstr; // Ensure 64 characters
+  return `0x${nstr}`; // **No quotes, returns proper hex**
 }
 
 /*
@@ -13359,7 +13451,8 @@ var plonk = /*#__PURE__*/Object.freeze({
     fullProve: plonkFullProve,
     prove: plonk16Prove,
     verify: plonkVerify,
-    exportSolidityCallData: plonkExportSolidityCallData
+    exportSolidityCallData: plonkExportSolidityCallData,
+    exportSwayCalldata: formatDataForSwayTest
 });
 
 /*
