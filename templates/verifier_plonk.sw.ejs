@@ -484,7 +484,6 @@ impl Proof {
       return [beta, gamma, alpha, xi, v, u]
   }
 
-  // also when there's no pub input, there should be an output for calculateLagrange.
   fn calculateLagrange(self, xi: u256, ref mut pEval: [u256; <%=Math.max(nPublic, 1)%>]) -> u256 {
     // We want for i=0..nPublic: Li(z) = ω^i(z^n−1) / n(z−ω^i)
 
