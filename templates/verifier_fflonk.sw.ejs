@@ -1364,7 +1364,7 @@ fn verify_proof(proof: Proof, pub_signal: [u256;<%=Math.max(nPublic, 1)%>]) -> b
     //      3) Compute the others inverses using the Montgomery Batched Algorithm using the inverse sent to avoid the inversion operation it does.
 
     let ( inverse_val, pEval_l1)= compute_inversion(roots, challenges, zh, proof.batch_inv.x);
-    let mut Eval_l1: [u256;1] = pEval_l1;
+    let mut Eval_l1: [u256;<%=Math.max(nPublic, 1)%>] = pEval_l1;
 
     // Compute Lagrange polynomial evaluations Li(xi)
     let eval_l1 = compute_lagrange(zh, Eval_l1);
