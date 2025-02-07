@@ -1352,6 +1352,13 @@ fn verify_proof(proof: Proof, pub_signal: [u256;<%=Math.max(nPublic, 1)%>]) -> b
     // Validate that all evaluations ∈ F
     assert(check_input(proof));
 
+    // validate public inputs
+    let mut i = 0;
+    while i < u64::max(N_PUBLIC, 1) {
+        assert(pub_signal[i] < Q);
+        i = i + 1;
+    }
+
     // Compute the challenges: beta, gamma, xi, alpha and y ∈ F, h1w4/h2w3/h3w3 roots, xiN and zh(xi)
     let (challenges, roots, zh) = compute_challenges(&proof, pub_signal);
 
