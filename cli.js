@@ -763,6 +763,10 @@ async function zkeyExportSwayCalldata(params, options) {
   let res;
   if (proof.protocol == "plonk") {
       res = await plonk.exportSwayCalldata(proof, pub);
+  } else if (proof.protocol == "groth16") {
+      res = await groth16.exportSwayCalldata(proof, pub); 
+  } else if (proof.protocol == "fflonk") {
+      res = await fflonk.exportSwayCalldata(proof, pub);
   } else {
       throw new Error("Invalid Protocol");
   }
