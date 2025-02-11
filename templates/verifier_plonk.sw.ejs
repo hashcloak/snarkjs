@@ -269,6 +269,10 @@ struct Proof {
   pub eval_zw: u256,
 }
 
+abi PlonkVerifier {
+  fn verify(proof: Proof, pubInput: [u256;<%=nPublic%>]) -> bool;
+}
+
 impl u256 {
   fn addmod(self, other: u256) -> u256 {
       let mut res: u256 = 0;
@@ -1041,5 +1045,11 @@ impl Proof {
       };
       
       result != 0
+  }
+}
+
+impl PlonkVerifier for Contract {
+  fn verify(proof: Proof, pubInput: [u256;<%=nPublic%>]) -> bool {
+      proof.verify(pubInput)
   }
 }
