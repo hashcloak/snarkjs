@@ -1,0 +1,10 @@
+contract;
+
+mod lib;
+use lib::{FflonkVerifier, Proof};
+
+impl FflonkVerifier for Contract {
+    fn verify(proof: Proof, pub_signal: [u256;<%=Math.max(nPublic, 1)%>]) -> bool {
+        verify_proof(proof, pub_signal)
+    }
+}

@@ -12773,7 +12773,7 @@ const commands = [
         action: zkeyExportSolidityCalldata
     },
     {
-        cmd: "zkey export swayverifier [circuit_final.zkey] [verifier.sw]",
+        cmd: "zkey export swayverifier [circuit_final.zkey] [verifier]",
         description: "Creates a verifier in sway",
         alias: ["zkeswv", "generateswayverifier -vk|verificationkey -v|verifier"],
         action: zkeyExportSwayVerifier
@@ -13220,10 +13220,10 @@ async function zkeyExportSolidityCalldata(params, options) {
     return 0;
 }
 
-// sway genverifier [circuit_final.zkey] [verifier.sol]
+// sway genverifier [circuit_final.zkey] [sway_verifier]
 async function zkeyExportSwayVerifier(params, options) {
     let zkeyName;
-    let verifierName;
+    let verifierDir;
 
     if (params.length < 1) {
         zkeyName = "circuit_final.zkey";
@@ -13232,28 +13232,40 @@ async function zkeyExportSwayVerifier(params, options) {
     }
 
     if (params.length < 2) {
-        verifierName = "verifier.sw";
+        verifierDir = "sway_verifier"; // Default output directory
     } else {
-        verifierName = params[1];
+        verifierDir = params[1];
     }
 
     if (options.verbose) Logger__default["default"].setLogLevel("DEBUG");
 
-    const templates = {};
+    const templates = {
+        lib: { groth16: "", plonk: "", fflonk: "" },
+        main: { groth16: "", plonk: "", fflonk: "" }
+    };
 
-    if (await fileExists(path__default["default"].join(__dirname$1, "templates"))) {
-        templates.groth16 = await fs__default["default"].promises.readFile(path__default["default"].join(__dirname$1, "templates", "verifier_groth16.sw.ejs"), "utf8");
-        templates.plonk = await fs__default["default"].promises.readFile(path__default["default"].join(__dirname$1, "templates", "verifier_plonk.sw.ejs"), "utf8");
-        templates.fflonk = await fs__default["default"].promises.readFile(path__default["default"].join(__dirname$1, "templates", "verifier_fflonk.sw.ejs"), "utf8");
-    } else {
-        templates.groth16 = await fs__default["default"].promises.readFile(path__default["default"].join(__dirname$1, "..", "templates", "verifier_groth16.sw.ejs"), "utf8");
-        templates.plonk = await fs__default["default"].promises.readFile(path__default["default"].join(__dirname$1, "..", "templates", "verifier_plonk.sw.ejs"), "utf8");
-        templates.fflonk = await fs__default["default"].promises.readFile(path__default["default"].join(__dirname$1, "..", "templates", "verifier_fflonk.sw.ejs"), "utf8");
-    }
+    const templateDir = await fileExists(path__default["default"].join(__dirname$1, "templates"))
+        ? path__default["default"].join(__dirname$1, "templates")
+        : path__default["default"].join(__dirname$1, "..", "templates");
 
-    const verifierCode = await exportSwayVerifier(zkeyName, templates, logger);
+    templates.lib.groth16 = await fs__default["default"].promises.readFile(path__default["default"].join(templateDir, "verifier_groth16_lib.sw.ejs"), "utf8");
+    templates.main.groth16 = await fs__default["default"].promises.readFile(path__default["default"].join(templateDir, "verifier_groth16_main.sw.ejs"), "utf8");
 
-    fs__default["default"].writeFileSync(verifierName, verifierCode, "utf-8");
+    templates.lib.plonk = await fs__default["default"].promises.readFile(path__default["default"].join(templateDir, "verifier_plonk_lib.sw.ejs"), "utf8");
+    templates.main.plonk = await fs__default["default"].promises.readFile(path__default["default"].join(templateDir, "verifier_plonk_main.sw.ejs"), "utf8");
+
+    templates.lib.fflonk = await fs__default["default"].promises.readFile(path__default["default"].join(templateDir, "verifier_fflonk_lib.sw.ejs"), "utf8");
+    templates.main.fflonk = await fs__default["default"].promises.readFile(path__default["default"].join(templateDir, "verifier_fflonk_main.sw.ejs"), "utf8");
+
+    // Ensure output directory exists
+    await fs__default["default"].promises.mkdir(verifierDir, { recursive: true });
+
+    const libCode = await exportSwayVerifier(zkeyName, templates.lib, logger);
+    const mainCode = await exportSwayVerifier(zkeyName, templates.main, logger);
+
+    // Write lib.sw and main.sw separately
+    fs__default["default"].writeFileSync(path__default["default"].join(verifierDir, "lib.sw"), libCode, "utf-8");
+    fs__default["default"].writeFileSync(path__default["default"].join(verifierDir, "main.sw"), mainCode, "utf-8");
 
     return 0;
 }
