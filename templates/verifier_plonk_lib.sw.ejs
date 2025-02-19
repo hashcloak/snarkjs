@@ -20,29 +20,6 @@ pub struct G2Point {
     pub y: [u256;2],
 }
 
-impl G2Point {
-
-  pub fn to_bytes(self) -> [u8; 128] {
-      let x0_bytes: [u8; 32] = self.x[0].to_be_bytes();
-      let x1_bytes: [u8; 32] = self.x[1].to_be_bytes();
-      let y0_bytes: [u8; 32] = self.y[0].to_be_bytes();
-      let y1_bytes: [u8; 32] = self.y[1].to_be_bytes();
-
-      let mut result_bytes: [u8; 128] = [0; 128];
-
-      let mut i = 0;
-      while i < 32 {
-          result_bytes[i] = x0_bytes[i];
-          result_bytes[i + 32] = x1_bytes[i];
-          result_bytes[i + 64] = y0_bytes[i];
-          result_bytes[i + 96] = y1_bytes[i];
-          i += 1;
-      }
-
-      result_bytes
-  }
-}
-
 impl G1Point {
 
     pub fn bytes(self) -> Bytes {
@@ -67,24 +44,6 @@ impl G1Point {
         }
 
         result_bytes
-    }
-
-    pub fn from_bytes(bytes: [u8; 64]) -> G1Point {
-
-        let mut x_bytes: [u8; 32] = [0; 32];
-        let mut y_bytes: [u8; 32] = [0; 32];
-
-        let mut i = 0;
-        while i < 32 {
-            x_bytes[i] = bytes[i];
-            y_bytes[i] = bytes[i + 32];
-            i += 1;
-        }
-
-        G1Point {
-            x: u256::from_be_bytes(x_bytes),
-            y: u256::from_be_bytes(y_bytes),
-        }
     }
 
     pub fn point_add(self, other: G1Point) -> Self {
