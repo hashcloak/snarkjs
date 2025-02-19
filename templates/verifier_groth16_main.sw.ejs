@@ -8,8 +8,8 @@ impl Groth16Verifier for Contract {
     p_a: [u256; 2],
     p_b: [[u256; 2]; 2],
     p_c: [u256; 2],
-    pub_signals: [u256; <%=IC.length-1%>],
+    pub_signal: [u256; <%=IC.length-1%>],
 ) -> bool {
-  return verify_proof(p_a, p_b, p_c, pub_signals);
+  return verify_proof(p_a, p_b, p_c, pub_signal);
 }
 }

@@ -161,7 +161,7 @@ pub struct Proof {
 }
 
 abi PlonkVerifier {
-  fn verify(proof: Proof, pubInput: [u256;<%=nPublic%>]) -> bool;
+  fn verify(proof: Proof, pub_signal: [u256;<%=nPublic%>]) -> bool;
 }
 
 impl u256 {

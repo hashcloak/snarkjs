@@ -4,7 +4,7 @@ mod lib;
 use lib::{PlonkVerifier, Proof};
 
 impl PlonkVerifier for Contract {
-  fn verify(proof: Proof, pubInput: [u256;<%=nPublic%>]) -> bool {
-      proof.verify(pubInput)
+  fn verify(proof: Proof, pub_signal: [u256;<%=nPublic%>]) -> bool {
+      proof.verify(pub_signal)
   }
 }
