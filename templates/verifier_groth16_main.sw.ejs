@@ -1,0 +1,15 @@
+contract;
+
+mod lib;
+use lib::{Groth16Verifier, verify_proof};
+
+impl Groth16Verifier for Contract {
+  fn verify(
+    p_a: [u256; 2],
+    p_b: [[u256; 2]; 2],
+    p_c: [u256; 2],
+    pub_signals: [u256; <%=IC.length-1%>],
+) -> bool {
+  return verify_proof(p_a, p_b, p_c, pub_signals);
+}
+}

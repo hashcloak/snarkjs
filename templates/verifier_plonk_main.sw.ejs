@@ -1,0 +1,10 @@
+contract;
+
+mod lib;
+use lib::{PlonkVerifier, Proof};
+
+impl PlonkVerifier for Contract {
+  fn verify(proof: Proof, pubInput: [u256;<%=nPublic%>]) -> bool {
+      proof.verify(pubInput)
+  }
+}

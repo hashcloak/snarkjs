@@ -1,25 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0
-/*
-Copyright 2021 0KIMS association.
-
-This file is generated with [snarkJS](https://github.com/iden3/snarkjs).
-
-snarkJS is a free software: you can redistribute it and/or modify it
-under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-snarkJS is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
-License for more details.
-
-You should have received a copy of the GNU General Public License
-along with snarkJS. If not, see
-<https: //www.gnu.org/licenses />.
-*/
-
-contract;
+library;
 
 use std::hash::Hash;
 use std::hash::keccak256;
@@ -251,7 +230,7 @@ const S1: G1Point = G1Point {x: S1x, y: S1y };
 const S2: G1Point = G1Point {x: S2x, y: S2y };
 const S3: G1Point = G1Point {x: S3x, y: S3y };
 
-struct Proof {
+pub struct Proof {
   pub proof_A: G1Point,
   pub proof_B: G1Point,
   pub proof_C: G1Point,
@@ -1045,11 +1024,5 @@ impl Proof {
       };
       
       result != 0
-  }
-}
-
-impl PlonkVerifier for Contract {
-  fn verify(proof: Proof, pubInput: [u256;<%=nPublic%>]) -> bool {
-      proof.verify(pubInput)
   }
 }
