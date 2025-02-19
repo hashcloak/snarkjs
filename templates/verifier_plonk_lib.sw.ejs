@@ -145,37 +145,6 @@ impl G1Point {
     }
 }
 
-pub fn on_bn128_curve(p: G1Point) -> bool {
-
-    let QF: u256 = 0x30644E72E131A029B85045B68181585D97816A916871CA8D3C208C16D87CFD47u256;
-
-    let mut res: u256 = 0;
-    // y^2 mod QF
-    asm(rA: res, rB: p.y, rC: p.y, rD: QF) {
-        wqmm rA rB rC rD;
-    }
-
-    let mut x_square: u256 = 0;
-    // x^2 mod QF
-    asm(rA: x_square, rB: p.x, rC: p.x, rD: QF) {
-        wqmm rA rB rC rD;
-    }
-
-    let mut x_cubed: u256 = 0;
-    // x^3 mod QF
-    asm(rA: x_cubed, rB: x_square, rC: p.x, rD: QF) {
-        wqmm rA rB rC rD;
-    }
-
-    // x^3 + 3 mod QF
-    let mut res_x: u256 = 0;
-    asm(rA: res_x, rB: x_cubed, rC: 0x3u256, rD: QF) {
-        wqam rA rB rC rD;
-    }
-    
-    res_x == res
-}
-
 // Omega
 const w1: u256 = <%='0x' + BigInt(w).toString(16) + 'u256' ;%>;
 // Scalar field size
@@ -867,17 +836,8 @@ impl Proof {
   pub fn verify(self, publicInput: [u256; <%=nPublic%>]) -> bool {
       // 1. Check points are on curve
       // ([a]1, [b]1, [c]1, [z]1, [tlo]1, [tmid]1, [thi]1, [Wz]1, [Wzω]1) ∈ G91
-      if !(on_bn128_curve(self.proof_A)
-          && on_bn128_curve(self.proof_B)
-          && on_bn128_curve(self.proof_C)
-          && on_bn128_curve(self.proof_Z)
-          && on_bn128_curve(self.proof_T1)
-          && on_bn128_curve(self.proof_T2)
-          && on_bn128_curve(self.proof_T3)
-          && on_bn128_curve(self.proof_Wxi)
-          && on_bn128_curve(self.proof_Wxiw)) {
-          return false;
-      }
+      // This check is not needed, because the ecc opcodes perform this check 
+
       // 2. Validate (¯a, ¯b, ¯c,¯sσ1,¯sσ2, ¯zω) ∈ F6 (u256 field, q)
       if !(self.eval_a < q
           && self.eval_b < q

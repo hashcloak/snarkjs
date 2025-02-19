@@ -200,28 +200,6 @@ impl G1Point {
             y: output[1],
         }
     }
-
-    // Check that the point is on the curve
-    // y^2 = x^3 + 3
-    pub fn check_point_belongs_to_bn128_curve(p: G1Point) -> bool {
-
-        let mut res: u256 = 0;
-        // y^2 mod QF
-        asm(rA: res, rB: p.y, rC: p.y, rD: QF) {
-            wqmm rA rB rC rD;
-        }
-        
-        // x^3 + 3 mod QF
-        let mut res_x: u256 = 0;
-        asm(rA: res_x, rB: p.x, rC: p.x, rD: QF, rE: 0x3u256) {
-            wqmm rA rB rC rD;
-            wqmm rA rA rB rD;
-            wqam rA rA rE rD;
-        }
-
-        // check if y^2 == x^3 + 3 mod QF
-        res_x == res
-    }
 }
 
 pub fn check_field(v: Scalar) -> bool {
@@ -229,23 +207,7 @@ pub fn check_field(v: Scalar) -> bool {
 }
 
 fn check_input(proof: Proof) -> bool {
-    if !G1Point::check_point_belongs_to_bn128_curve(proof.C1) {
-        log("C1 point does not belong to the curve.");
-        return false;
-    }
-    if !G1Point::check_point_belongs_to_bn128_curve(proof.C2) {
-        log("C2 point does not belong to the curve.");
-        return false;
-    }
-    if !G1Point::check_point_belongs_to_bn128_curve(proof.W) {
-        log("W point does not belong to the curve.");
-        return false;
-    }
-    if !G1Point::check_point_belongs_to_bn128_curve(proof.W_dash)
-    {
-        log("W_dash point does not belong to the curve.");
-        return false;
-    }
+    // Note: points don't have to be checked for validity, because the ecc opcode performs this check
     if !check_field(proof.q_L) {
         log("q_L does not belong to the Scalar field.");
         return false;

@@ -40,10 +40,8 @@ pub fn verify_proof(
       }
       i += 1;
   }
-  // check element in proof < Q
-  if p_a[0] >= Q || p_a[1] >= Q || p_b[0][0] >= Q || p_b[0][1] >= Q || p_b[1][0] >= Q || p_b[1][1] >= Q || p_c[0] >= Q || p_c[1] >= Q {
-      return false;
-  };
+
+  // Note: points don't have to be checked for validity, because the ecc opcode performs this check
 
   // compute the linear combination of X
   let mut x: [u256; 2] = [IC0_X, IC0_Y];
