@@ -1327,7 +1327,7 @@ fn check_pairing(pe: G1Point, pf: G1Point, pj: G1Point, proof: Proof, challenge:
 
 }
 
-fn verify_proof(proof: Proof, pub_signal: [u256;<%=Math.max(nPublic, 1)%>]) -> bool {
+pub fn verify_proof(proof: Proof, pub_signal: [u256;<%=Math.max(nPublic, 1)%>]) -> bool {
 
     // Validate that all evaluations ∈ F
     assert(check_input(proof));

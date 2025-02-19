@@ -1,7 +1,7 @@
 contract;
 
 mod lib;
-use lib::{FflonkVerifier, Proof};
+use lib::{FflonkVerifier, Proof, verify_proof};
 
 impl FflonkVerifier for Contract {
     fn verify(proof: Proof, pub_signal: [u256;<%=Math.max(nPublic, 1)%>]) -> bool {
