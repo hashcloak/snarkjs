@@ -13297,7 +13297,7 @@ async function zkeyExportSwayCalldata(params, options) {
     proof: proof
   };
 
-  console.log(res);
+  console.log(JSON.stringify(res));
 
   return 0;
 }
