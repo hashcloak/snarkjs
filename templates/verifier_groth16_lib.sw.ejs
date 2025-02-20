@@ -120,6 +120,6 @@ abi Groth16Verifier {
         p_a: [u256; 2],
         p_b: [[u256; 2]; 2],
         p_c: [u256; 2],
-        pub_signals: [u256; <%=IC.length-1%>],
+        pub_signal: [u256; <%=IC.length-1%>],
     ) -> bool;
 }
