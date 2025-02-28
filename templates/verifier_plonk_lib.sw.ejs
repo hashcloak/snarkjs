@@ -547,17 +547,89 @@ impl Proof {
       asm (rA: temp0, rB: self.eval_a, rC: self.eval_b, rD: q) {
         wqmm rA rB rC rD;
       };
-      let temp0_point = Qm.u256_mul(temp0);
-      point_term_1 = point_term_1.point_add(temp0_point);
+      let mut mul_input: [u256; 3] = [0; 3];
+      let mut mul_output: [u256; 2] = [0; 2];
+
+      //Qm.u256_mul(temp0);
+      mul_input[0] = Qm.x;
+      mul_input[1] = Qm.y;
+      mul_input[2] = temp0;
+      asm(rA: mul_output, rB: 0, rC: 1, rD: mul_input) {
+          ecop rA rB rC rD;
+      }
+
+      let mut input: [u256; 4] = [0; 4];
+      let mut output: [u256; 2] = [0; 2];
+
+      // point_term_1 = point_term_1.point_add(temp0_point);
+      input[0] = point_term_1.x;
+      input[1] = point_term_1.y;
+      input[2] = mul_output[0];
+      input[3] = mul_output[1];
+      asm(rA: output, rB: 0, rC: 0, rD: input) {
+          ecop rA rB rC rD;
+      }
+      
       //eval_a*Ql
-      let temp1_point = Ql.u256_mul(self.eval_a);
-      point_term_1 = point_term_1.point_add(temp1_point);
+      // let temp1_point = Ql.u256_mul(self.eval_a);
+      mul_input[0] = Ql.x;
+      mul_input[1] = Ql.y;
+      mul_input[2] = self.eval_a;
+      asm(rA: mul_output, rB: 0, rC: 1, rD: mul_input) {
+          ecop rA rB rC rD;
+      }
+      
+      // point_term_1 = point_term_1.point_add(temp1_point);
+      input[0] = output[0];
+      input[1] = output[1];
+      input[2] = mul_output[0];
+      input[3] = mul_output[1];
+      asm(rA: output, rB: 0, rC: 0, rD: input) {
+          ecop rA rB rC rD;
+      }
+      point_term_1 = G1Point{
+          x: output[0],
+          y: output[1],
+      };
+      
       //eval_b*Qr
-      let temp2_point = Qr.u256_mul(self.eval_b);
-      point_term_1 = point_term_1.point_add(temp2_point);
+      mul_input[0] = Qr.x;
+      mul_input[1] = Qr.y;
+      mul_input[2] = self.eval_b;
+      asm(rA: mul_output, rB: 0, rC: 1, rD: mul_input) {
+          ecop rA rB rC rD;
+      }
+
+      // point_term_1 = point_term_1.point_add(temp2_point);
+      input[0] = output[0];
+      input[1] = output[1];
+      input[2] = mul_output[0];
+      input[3] = mul_output[1];
+      asm(rA: output, rB: 0, rC: 0, rD: input) {
+          ecop rA rB rC rD;
+      }
+      
       //eval_c*Qo
-      let temp3_point = Qo.u256_mul(self.eval_c);
-      point_term_1 = point_term_1.point_add(temp3_point);
+      mul_input[0] = Qo.x;
+      mul_input[1] = Qo.y;
+      mul_input[2] = self.eval_c;
+
+      asm(rA: mul_output, rB: 0, rC: 1, rD: mul_input) {
+          ecop rA rB rC rD;
+      }
+      
+      // point_term_1 = point_term_1.point_add(temp3_point);
+      input[0] = output[0];
+      input[1] = output[1];
+      input[2] = mul_output[0];
+      input[3] = mul_output[1];
+      asm(rA: output, rB: 0, rC: 0, rD: input) {
+          ecop rA rB rC rD;
+      }
+      point_term_1 = G1Point {
+        x: output[0],
+        y: output[1]
+      };
 
       //// TERM 2
       // (¯a + βz + γ)
@@ -625,7 +697,18 @@ impl Proof {
       };
 
       // ((¯a + βz + γ)(¯b + βk1z + γ)(¯c + βk2z + γ)α + L1(z)α2 + u) · [z]1
-      let point_term2 = self.proof_Z.u256_mul(u256_term_2);
+      //self.proof_Z.u256_mul(u256_term_2);
+      mul_input[0] = self.proof_Z.x;
+      mul_input[1] = self.proof_Z.y;
+      mul_input[2] = u256_term_2;
+      asm(rA: mul_output, rB: 0, rC: 1, rD: mul_input) {
+          ecop rA rB rC rD;
+      }
+      // Must be saved for later
+      let point_term2 = G1Point {
+          x: mul_output[0],
+          y: mul_output[1]
+      };
 
       //// TERM 3
       // (¯a + β¯sσ1 + γ)
@@ -668,25 +751,70 @@ impl Proof {
       };
 
       // (¯a + β¯sσ1 + γ)(¯b + β¯sσ2 + γ)αβ¯zω · [sσ3]1
-      let point_term3 = S3.u256_mul(u256_term3);
+      
+      //S3.u256_mul(u256_term3);
+      mul_input[0] = S3.x;
+      mul_input[1] = S3.y;
+      mul_input[2] = u256_term3;
+      asm(rA: mul_output, rB: 0, rC: 1, rD: mul_input) {
+          ecop rA rB rC rD;
+      }
+      let point_term3 = G1Point {
+          x: mul_output[0],
+          y: mul_output[1]
+      };
 
       //// TERM 4
       let mut point_term4: G1Point = self.proof_T1;
       // xi^n[t_mid]1
-      let mut temp_point: G1Point = self.proof_T2.u256_mul(xi_pow_n);
-      point_term4 = point_term4.point_add(temp_point);
+      //self.proof_T2.u256_mul(xi_pow_n);
+      mul_input[0] = self.proof_T2.x;
+      mul_input[1] = self.proof_T2.y;
+      mul_input[2] = xi_pow_n;
+      asm(rA: mul_output, rB: 0, rC: 1, rD: mul_input) {
+          ecop rA rB rC rD;
+      }
+      
+      // point_term4 = point_term4.point_add(temp_point);
+      input[0] = point_term4.x;
+      input[1] = point_term4.y;
+      input[2] = mul_output[0];
+      input[3] = mul_output[1];
+      asm(rA: output, rB: 0, rC: 0, rD: input) {
+          ecop rA rB rC rD;
+      }
       
       // xi^2n
       asm (rA: val2, rB: xi_pow_n, rC: xi_pow_n, rD: q) {
         wqmm rA rB rC rD;
       };
       // xi^2n · [t_hi]1
-      temp_point = self.proof_T3.u256_mul(val2);
-      point_term4 = point_term4.point_add(temp_point);
+      // let mut temp_point = self.proof_T3.u256_mul(val2);
+      mul_input[0] = self.proof_T3.x;
+      mul_input[1] = self.proof_T3.y;
+      mul_input[2] = val2;
+      asm(rA: mul_output, rB: 0, rC: 1, rD: mul_input) {
+          ecop rA rB rC rD;
+      }
+      
+      // point_term4 = point_term4.point_add(temp_point);
+      input[0] = output[0];
+      input[1] = output[1];
+      input[2] = mul_output[0];
+      input[3] = mul_output[1];
+      asm(rA: output, rB: 0, rC: 0, rD: input) {
+          ecop rA rB rC rD;
+      }
 
       // ZH(z)([tlo]1 + zn · [tmid]1 + z2n · [thi]1)
-      point_term4 = point_term4.u256_mul(xi_pow_n - 1);
-
+      // point_term4 = point_term4.u256_mul(xi_pow_n - 1);
+      mul_input[0] = output[0];
+      mul_input[1] = output[1];
+      mul_input[2] = xi_pow_n - 1;
+      asm(rA: mul_output, rB: 0, rC: 1, rD: mul_input) {
+          ecop rA rB rC rD;
+      }
+      
       // negate point term3
       let neg_y_3: u256 = qf - point_term3.y;
       let neg_term3 = G1Point{
@@ -696,15 +824,41 @@ impl Proof {
       let mut neg_y_bytes: [u8; 64] = neg_term3.to_bytes();
 
       // negate point term4
-      let neg_y_4 = qf - point_term4.y;
+      let neg_y_4 = qf - mul_output[1];
       let neg_term4 = G1Point{
-          x: point_term4.x,
+          x: mul_output[0],
           y: neg_y_4
       };
-      let mut res: G1Point = point_term_1.point_add(point_term2);
-      res = res.point_add(neg_term3);
-      res = res.point_add(neg_term4);
-      return res;
+
+      //point_term_1.point_add(point_term2);
+      input[0] = point_term_1.x;
+      input[1] = point_term_1.y;
+      input[2] = point_term2.x;
+      input[3] = point_term2.y;
+      asm(rA: output, rB: 0, rC: 0, rD: input) {
+          ecop rA rB rC rD;
+      }
+
+      let mut res: G1Point = G1Point {
+          x: output[0],
+          y: output[1],
+      };
+      input[0] = output[0];
+      input[1] = output[1];
+      input[2] = point_term3.x;
+      input[3] = neg_y_3;
+      asm(rA: output, rB: 0, rC: 0, rD: input) {
+          ecop rA rB rC rD;
+      }
+
+      input[0] = output[0];
+      input[1] = output[1];
+      input[2] = mul_output[0];
+      input[3] = neg_y_4;
+      asm(rA: output, rB: 0, rC: 0, rD: input) {
+          ecop rA rB rC rD;
+      }
+      return G1Point { x: output[0], y: output[1] };
   }
 
   fn calculateF(self,
